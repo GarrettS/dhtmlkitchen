@@ -1,0 +1,243 @@
+<div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="/?category=/JavaScript/&amp;date=2008/05/11/&amp;entry=Decorator-Factory-Aspect" title="Permalink of &quot;Factory Aspect, Added to a Decorator: APE.getById&quot;">Factory Aspect, Added to a Decorator: APE.getById</a>
+        	<small class="date">Sunday, 11 May 2008</small>
+        	</h1>
+
+        
+        <div class="post">
+            <p>
+    This article describes the generic concepts for creating and mixing design patterns. 
+    The basic principle for all design patterns is: <em>Encapsulate the parts that vary</em>. 
+</p>
+
+<p>
+    The problem is finding a way to create a generic <dfn>Factory</dfn> that can be reused on 
+    various constructor functions for element <dfn>Decorators</dfn>. This article explains 
+    the problem and the process for finding the solution. 
+</p>
+
+<h3>Decorator Factory Aspect</h3>
+<p>A <dfn>Decorator Factory Aspect</dfn> is a 
+<dfn>Factory method</dfn>, added as an <dfn>Aspect</dfn> to a constructor of a <dfn>Decorator</dfn>.</p>
+
+<p>Before I explain how to add a <dfn>Factory</dfn> to a constructor function for an element <dfn>decorator</dfn>,
+I should first define <dfn>Decorator</dfn> (also called a <dfn>wrapper</dfn>), <dfn>Factory</dfn> and <dfn>Aspect</dfn>. 
+</p>
+
+<dl>
+    <dt>Decorator Pattern</dt>
+    <dd>makes it possible to extend (decorate) the functionality of a class 
+    by adding a new decorator class that wraps the original class. 
+    (<a href="http://en.wikipedia.org/wiki/Decorator_pattern">Wikipedia link</a>)
+    </dd>
+    
+    <dt>Factory Pattern</dt>
+    <dd>
+        The Factory pattern is a creational design pattern 
+        that encapsulates the processes of creating objects
+    (<a href="http://en.wikipedia.org/wiki/Factory_pattern">Wikipedia link</a>)
+    </dd>
+
+    <dt>Aspect</dt>
+    <dd>
+        <cite><q>introduces separation of concerns, specifically cross-cutting concerns, as an advance in modularization</q></cite> 
+        (<a href="http://en.wikipedia.org/wiki/Aspect-oriented_programming">Wikipedia link</a>)
+    </dd>
+</dl>
+
+<h4>Decorator Examples</h4>
+<p>
+  <dfn>Decorator</dfn> is very common in JavaScript. For example: <a href="http://developer.yahoo.com/yui/docs/Element.js.html">YAHOO.util.Element</a> <dfn>decorates</dfn> an element, 
+  jQuery <dfn>decorates</dfn> an array of elements. 
+</p>
+
+<h4>Factory Example</h4>
+
+<p>The <dfn>Factory</dfn> gets or creates a <dfn>decorated</dfn> element. 
+The <code>id</code> of the <dfn>wrapper</dfn> is the same as the <code>id</code> of the element. 
+This is the part I want to make reusable:</p>
+<pre>/**
+ * @constructor
+ * @param {String} id - the id of the element and widget. 
+ */
+function ElementWrapper(id, x) {
+  this.id = id;
+  this.x = x;
+}
+
+<span class="comment">// Factory. 
+// <span class="todo">TODO:</span> How can I make this generic/reusable?</span>
+ElementWrapper<span style="color: #191; background: #FFFFc9">.instances = {};</span>
+ElementWrapper<span style="color: #191; background: #FFFFc9">.getById = <span class="keyword">function</span>(<var>id</var>, <var>x</var>) {
+  <span class="keyword">if</span>(<span class="keyword">this</span>.instances.hasOwnProperty(<var>id</var>)) <span class="keyword">return</span> <span class="keyword">this</span>.instances[<var>id</var>];
+  <span class="keyword">return this</span>.instances[<var>id</var>] = <span class="keyword">new this</span>(<var>id</var>, <var>x</var>);
+};</span>
+
+ElementWrapper.prototype = { 
+  show : function() { 
+    document.getElementById(this.id).style.visibility = "visible";
+  }
+};
+</pre>
+
+<h5>Benefits</h5>
+<p>
+    Solves the problem of creating only one decorator per element <code>id</code>.
+</p>
+<p>
+By calling <code>getElementById</code>, the <dfn>decorator</dfn> can avoid 
+some of the problems with changing node references with <code>innerHTML</code> (though state changes 
+must still be managed manually).
+</p>
+
+<h3>
+  Problem: <abbr title="Dont Repeat Yourself">DRY</abbr>
+</h3>
+<blockquote>
+<p>Don't Repeat Yourself</p>
+<p>
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system.
+</p>
+</blockquote>
+
+<p>
+  It is cumbersome and error-prone to write out a <dfn>Factory</dfn> each time. 
+Since this is an idiom I use a lot, it makes 
+  sense to make it reusable.</p>
+
+<p>
+    I want to have a generic <code>getById</code> method that can be reused and will return 
+    an instance of the constructor that it is called on. I want to be able to pass 
+    extra arguments to that constructor (varargs). 
+</p>
+
+<h3>Encapsulate the Parts That Vary</h3>
+<p>
+<strong>What varies?</strong> 
+</p>
+
+<p>
+  The <code>id</code> parameter variable of <code>getById</code> does not change; it will 
+  always be present in any generic <dfn>Factory</dfn>. 
+  The parts of the <dfn>Factory</dfn> that vary are: The additional zero or more arguments (varargs, 
+  this case, <code>x</code>),
+  and the context, or <dfn>thisArg</dfn>.
+</p>
+
+<p>
+    Resolving the context arg is easy. 
+</p>
+
+<p>
+  If I can solve passing varargs to a constructor in a generic context, 
+  it will be possible to create a generic <dfn>Factory</dfn> <dfn>Aspect</dfn>. 
+</p>
+
+<h4>Function newApply</h4>
+A way to call <code>new</code> with variable arguments would solve this problem.
+A <code>new + apply()</code> would provide the varargs functionality of <code>apply</code>, 
+but passed to <code>[[Construct]]</code>, not <code>[[Call]]</code>. 
+
+<p>This has been solved in <a href="/ape" title="AOP Pointcuts for JavaScript">APE</a> core. 
+The source code for <code>APE.newApply</code>:
+</p>
+<pre><span class="comment">
+/** 
+ * @param {Function} fun constructor to be invoked.
+ * @param {Array} args arguments to pass to the constructor.
+ * Instantiates a constructor and uses apply().
+ */</span>
+newApply : <span class="keyword">function</span>(<var>fun</var>, <var>args</var>) {
+    <span class="keyword">if</span>(arguments.length === 0) <span class="keyword">return</span>;
+    <span class="keyword">var</span> <var>f</var> = arguments.callee, <var>i</var>;
+
+    <var>f</var>.prototype = <var>fun</var>.prototype; // Add prototype.
+    <var>f</var>.prototype.constructor = <var>fun</var>;
+
+    <var>i</var> = <span class="keyword">new</span> <var>f</var>;
+    fun.apply(<var>i</var>, <var>args</var>);  <span class="comment">// Apply the original constructor.</span>
+    <span class="keyword">return</span> <var>i</var>;
+}
+</pre>
+
+<h4>What's it Good For?</h4>
+<p>
+  Now I can create the generic <code>getById</code> function I wanted. This function can be added as an <dfn>aspect</dfn> 
+  to any constructor function. <dfn>Factory</dfn> <dfn>Aspect</dfn> <code>APE.getById</code> is a part of 
+  <code title="AOP Pointcuts for EcmaScript">APE</code> core. 
+</p>
+
+<pre>getById : <span class="keyword">function</span>(<var>id</var>) {
+    <span class="keyword">if</span>(!<span class="keyword">this</span>.hasOwnProperty(<span class="q">"instances"</span>)) <span class="keyword">this</span>.instances = {};
+    <span class="keyword">return this</span>.instances[<var>id</var>] || (<span class="keyword">this</span>.instances[<var>id</var>] = APE.newApply(<span class="keyword">this</span>, arguments));       
+},
+</pre>
+
+<h4>Using the Generic <code>getById</code></h4>
+<p>This <code>getById</code> method can be used with <code>ElementWrapper</code> (above) 
+or any other constructor that acts as a <dfn>Decorator</dfn> to an element and 
+accepts the element's <code>id</code> as its first argument.
+</p>
+<pre>Slider = function(<var>id</var>, <var>dir</var>) { <span class="comment">/* ... */</span> };
+
+// Factory. 
+<span style="color:#191; background: #FFFFc9">Slider.getById = APE.getById;</span>
+</pre>
+
+<p>
+    Then I can use:
+</p>
+<pre>Slider.getById( "weight", 1 );
+</pre>
+<p>
+Subsequent calls to:</p>
+<pre>Slider.getById( "weight" );
+</pre>
+
+<p>— will return the same <code>Slider</code> instance.</p>
+
+<h3>More Examples</h3>
+
+<p>I have used this approach for many parts of <a title="AOP Pointcuts for EcmaScript" href="/ape/">APE</a>, including <a href="/ape/example/widget/calendar/">Calendar</a>,
+<a href="/ape/example/drag/">Draggable, and Slider</a>. It is most useful for building widgets.</p>
+
+<h3>Reusable Concept</h3>
+<p>Another closely related technique is <dfn>Decorator</dfn> that accepts an <em>element</em> instead 
+of an element's <code>id</code>. This is covered by <code>APE.getByNode</code>.
+</p>
+
+<h3>Source Code</h3>
+<p>
+  <a href="/ape/build/APE.js" title="APE Library Core JavaScript">APE.js</a>
+</p>
+
+<h3>Reflection</h3>
+<p>
+In most patterns, encapsulating the parts that vary entails creating an class. 
+However, in JavaScript, this particular pattern was simple to implement by using just 
+two functions (<code>APE.getById</code> and <code>APE.newApply</code>) and leveraging the dynamic nature of 
+JavaScript.
+</p>
+
+<h3>Forward to ES4</h3>
+<p>
+  ES4 has had some proposals for something called a <dfn>splat</dfn> operator.
+</p>
+<pre>fun(...argsOrArray); 
+new fun(...argsOrArray);
+</pre>
+
+<p>This proposal will allow passing varargs to a constructor or a function call.</p>
+
+<p>It is unclear how the <dfn>splat</dfn> operator, if accepted into the language, will work with 
+functions which expect typed arguments, in strict mode. 
+</p>
+
+<h3>Links</h3>
+<p>
+<a href="http://www.artima.com/intv/dry.html">Orthogonality and the DRY Principle</a>,
+A Conversation with Andy Hunt and Dave Thomas, Part II by Bill Venners March 10, 2003
+</p>

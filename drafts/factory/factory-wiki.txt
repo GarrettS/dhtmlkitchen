@@ -1,0 +1,238 @@
+= Factory Aspect, Added to a Decorator = 
+<p>
+    This class describes generic concepts for creating and mixing design patterns. 
+    The basic principle for all design patterns is: <em>Encapsulate the parts that vary</em>. 
+</p>
+The pattern itself is useful when you want to create at most one of an object for any 
+associated element element, off a bubbled event.
+
+
+== Step 1: getById ==
+
+
+<p>
+    The problem is finding a way to create a generic <dfn>Factory</dfn> that can be reused on 
+    various constructor functions for element <dfn>Decorators</dfn>. 
+</p>
+
+=== Decorator Factory Aspect === 
+<p>A <dfn>Decorator Factory Aspect</dfn> is a 
+<dfn>Factory method</dfn>, added as an <dfn>Aspect</dfn> to a constructor of a <dfn>Decorator</dfn>.</p>
+
+<p>Before we add a <dfn>Factory</dfn> to a constructor function for an element <dfn>decorator</dfn>,
+Let's define <dfn>Decorator</dfn> (also called a <dfn>wrapper</dfn>), <dfn>Factory</dfn> and <dfn>Aspect</dfn>. 
+</p>
+
+; Decorator Pattern
+: makes it possible to extend (decorate) the functionality of a class by adding a new decorator class that wraps the original class. ([http://en.wikipedia.org/wiki/Decorator_pattern Wikipedia link])
+    
+; Factory Pattern
+: The Factory pattern is a creational design pattern that encapsulates the processes of creating objects ([http://en.wikipedia.org/wiki/Factory_pattern Wikipedia link])
+
+; Aspect 
+: <cite>introduces separation of concern(s), as modularization of functionality</cite> ([http://en.wikipedia.org/wiki/Aspect-oriented_programming Wikipedia link])
+
+=== Decorator Examples ===
+<p>
+  <dfn>Decorator</dfn> is very common in JavaScript. For example: [http://developer.yahoo.com/yui/docs/Element.js.html YAHOO.util.Element] <dfn>decorates</dfn> an element, 
+  jQuery <dfn>decorates</dfn> a collection of elements. 
+</p>
+
+=== Factory Example ===
+
+<p>The <dfn>Factory</dfn> gets or creates a <dfn>decorated</dfn> element. 
+The <code>id</code> of the <dfn>wrapper</dfn> is the same as the <code>id</code> of the element. 
+This is the part I want to make reusable:</p>
+<source lang="javascript">/**
+ * @constructor
+ * @param {String} id - the id of the element and widget. 
+ */
+function ElementWrapper(id, x) {
+  this.id = id;
+  this.x = x;
+}
+
+// Factory. 
+// TODO: How can I make this generic/reusable?
+ElementWrapper.instances = {};
+ElementWrapper.getById = function(id, x) {
+  if(this.instances.hasOwnProperty(id)) return this.instances[id];
+  return this.instances[id] = new this(id, x);
+};
+
+ElementWrapper.prototype = { 
+  show : function() { 
+    document.getElementById(this.id).style.visibility = "visible";
+  }
+};
+</source>
+
+==== Benefits ====
+<p>
+    Solves the problem of creating only one decorator per element <code>id</code>.
+</p>
+<p>
+By calling <code>getElementById</code>, the <dfn>decorator</dfn> can avoid 
+some of the problems with changing node references with <code>innerHTML</code> (though state changes 
+must still be managed manually).
+</p>
+
+=== Problem: <abbr title="Dont Repeat Yourself">DRY</abbr> ===
+<blockquote>
+<p>Don't Repeat Yourself</p>
+<p>
+    Every piece of knowledge must have a single, unambiguous, authoritative representation within a system.
+</p>
+</blockquote>
+
+<p>
+  It is cumbersome and error-prone to write out a <dfn>Factory</dfn> each time. 
+Since this is an idiom I use a lot, it makes 
+  sense to make it reusable.</p>
+
+<p>
+    I want to have a generic <code>getById</code> method that can be reused and will return 
+    an instance of the constructor that it is called on. I want to be able to pass 
+    extra arguments to that constructor (varargs). 
+</p>
+
+=== Problem: Publicly Exposed Constructor ===
+A factory should not expose the constructor, but should hide it 
+so that the factory method must be used. I will explain the solution to this problem in part II.
+
+=== Encapsulate the Parts That Vary ===
+<strong>What varies?</strong> 
+
+The <code>id</code> parameter variable of <code>getById</code> does not change; it will 
+always be present in any generic <dfn>Factory</dfn>. 
+The parts of the <dfn>Factory</dfn> that vary are: The additional zero or more arguments (varargs, 
+this case, <code>x</code>),
+and the context, or <dfn>thisArg</dfn>.
+
+Resolving the context arg is easy. 
+
+If I can solve passing varargs to a constructor in a generic context, 
+it will be possible to create a generic <dfn>Factory</dfn> <dfn>Aspect</dfn>. 
+
+==== Function newApply ==== 
+A way to call <code>new</code> with variable arguments would solve this problem.
+A <code>new + apply()</code> would provide the varargs functionality of <code>apply</code>, 
+but passed to <code><nowiki>[[Construct]]</nowiki></code>, not <code><nowiki>[[Call]]</nowiki></code>. 
+
+The source code for <code>newApply</code>:
+
+<source lang="javascript">
+/** 
+ * @param {Function} fun constructor to be invoked.
+ * @param {Array} args arguments to pass to the constructor.
+ * Instantiates a constructor and uses apply().
+ */
+function newApply(fun, args) {
+    if(arguments.length === 0) return;
+    var f = arguments.callee, i;
+
+    f.prototype = fun.prototype; // Add prototype.
+    f.prototype.constructor = fun;
+
+    i = new f;
+    fun.apply(i, args);  // Apply the original constructor.
+    return i;
+}
+</source>
+
+==== What's it Good For? ==== 
+Now I can create the generic <code>getById</code> function I wanted. This function can be added as an <dfn>aspect</dfn> to any constructor function. <dfn>Factory</dfn> <dfn>Aspect</dfn> <code>getById</code> is a part of <code title="AOP Pointcuts for EcmaScript">APE</code> core. 
+
+<source lang="javascript">
+getById : function(id) {
+    if(!this.hasOwnProperty("instances")) this.instances = {};
+    return this.instances[id] || (this.instances[id] = newApply(this, arguments));       
+},
+</source>
+
+==== Using the Generic <code>getById</code> ====
+
+<p>This <code>getById</code> method can be used with <code>ElementWrapper</code> (above) 
+or any other constructor that acts as a <dfn>Decorator</dfn> to an element and 
+accepts the element's <code>id</code> as its first argument.
+</p>
+<source lang="javascript">Slider = function(id, dir) { /* ... */ };
+
+// Factory. 
+Slider.getById = getById;
+</source>
+
+<p>
+    Then I can use:
+</p>
+<source lang="javascript">Slider.getById( "weight", 1 );
+</source>
+<p>
+Subsequent calls to:</p>
+<source lang="javascript">Slider.getById( "weight" );
+</source>
+
+<p>— will return the same <code>Slider</code> instance.</p>
+
+=== More Examples === 
+
+<p>I have used this approach for many widgets, including 
+[http://garretts.github.io/ape-javascript-library/example/widget/calendar/ Calendar],
+[http://garretts.github.io/ape-javascript-library/example/drag/Slider/ Slider] and 
+Autocomplete (can't run off Github pages because there is no server side processing). 
+The pattern is useful for building widgets that can be initialized lazily, on a bubbled event.</p>
+
+=== Reusable Concept === 
+<p>Another closely related technique is <i>Decorator</i> that accepts an <em>element</em> instead 
+of an element's <code>id</code>. This is covered by <code>getByNode</code>.
+</p>
+
+
+=== Reflection ===
+<p>
+In most patterns, encapsulating the parts that vary entails creating an class. 
+However, in JavaScript, this particular pattern was simple to implement by using just 
+two functions (<code>getById</code>) and leveraging the dynamic nature of 
+JavaScript.
+</p>
+
+=== Links ===
+<p>
+[http://www.artima.com/intv/dry.html Orthogonality and the DRY Principle],
+A Conversation with Andy Hunt and Dave Thomas, Part II by Bill Venners March 10, 2003
+</p>
+
+== Step 2: Creating an Abstract Factory==
+
+=== Problem: Publicly Exposed Constructor ===
+A factory should not expose the constructor, but should hide it 
+so that the factory method must be used. I will explain the solution to this problem in part II.
+
+<source lang="javascript">
+var ElementWrapper = (function(){ 
+
+  function ElementWrapper(id, x) {
+    this.id = id;
+    this.x = x;
+    this.show = show;
+  }
+
+  function show() { 
+    document.getElementById(this.id).style.visibility = "visible";
+  }
+
+  var instances = {};
+  return { 
+    getById : function(id, x) {
+      if(instances.hasOwnProperty(id)) return instances[id];
+      return instances[id] = new ElementWrapper(id, x);
+    }
+  };
+})();
+</source>
+
+=== Source Code ===
+<p>
+[https://github.com/GarrettS/ape-javascript-library/blob/master/src/APE.js#L130
+https://github.com/GarrettS/ape-javascript-library/blob/master/src/APE.js#L130]
+</p>

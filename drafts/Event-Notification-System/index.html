@@ -1,0 +1,561 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0098)http://dhtmlkitchen.com/?category=/uncategorized/&date=2008/01/04/&entry=Event-Notification-System -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+	<title>DHTML Kitchen</title>
+	<link rel="shortcut icon" href='./favicon.ico' />
+
+	<link rel="Stylesheet" href="./res/css/1.css" />
+	<style type="text/css"></style>
+
+	<script src="./res/js/utils.js" type="text/javascript"></script>
+	<script src="./res/js/treeparams.js" type="text/javascript"></script>
+	<script src="./res/js/AnimTree.js" type="text/javascript"></script>
+	<!-- Meta Information -->
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="MSSmartTagsPreventParsing" content="true"/>
+	</head>
+	
+	<body>
+		<div id="contents">
+			<!-- bv: /news/2008/01/04//uncategorized/?category=%2funcategorized%2f&JSESSIONID=2CA1DAA9AC31F30FA5A7C278D3D59514&entry=Event-Notification-System&JSESSIONID=2CA1DAA9AC31F30FA5A7C278D3D59514&date=2008%2f01%2f04%2f&JSESSIONID=2CA1DAA9AC31F30FA5A7C278D3D59514 -->
+<div id="entries">
+				    
+            
+    
+    
+    
+
+    
+        
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="./Event-Notification-System.html" title="Permalink of &quot;Event Notification System&quot;">Event Notification System</a>
+        	<small class="date">Friday, 4 January 2008</small>
+        	</h1>
+
+        
+        <div class="post">
+                        <p>
+    An <dfn>Event Notification System</dfn> is an object that manages notification of events to multiple callbacks. 
+    The <dfn>Event Notification System</dfn> uses an <dfn>Event Registry</dfn> to store the callbacks as bound methods. When the event 
+    fires, the callbacks are invoked.
+
+</p>
+
+<h3>Event Registry</h3>
+<p>
+    An <dfn>Event Registry</dfn> is a store of bound methods. 
+    An <dfn>Event Registry</dfn> is used by an <dfn>Event Notification System</dfn>. 
+    The <dfn>Event Notification System</dfn> is tightly coupled with the <dfn>Event Registry</dfn>. Sometimes it is referred to <em>as</em> the <dfn>Registry</dfn>.
+    In reality, the <dfn>Registry</dfn> is just a data structure and the <dfn>Event Notification System</dfn> is a behavioral object.
+
+</p>
+
+<p>Almost Every JavaScript library has an <dfn>Event Registry</dfn>, or at least some way of dealing with event notification. 
+</p>
+
+<h4>For example:</h4>
+<pre>// YUI:
+YAHOO.util.Event.addListener( link, "click", linkClickHandler, thisArg );
+
+// Prototype: <span style="color: rgb(153, 0, 0);">(not a registry, but the old 'addEvent' function renamed)</span>.
+Event.observe( link, "click", linkClickHandler ); 
+
+// Dojo:
+dojo.connect( link, "onclick", window, "linkClickHandler" );
+</pre>
+
+<p>
+    They're all different in how they work. 
+
+</p>
+
+<p>
+    The <dfn>Event Registry</dfn> is useful for a few reasons. 
+</p>
+
+<ul>
+    <li>It allows multiple callbacks to be assigned to a function call.</li>
+    <li>Provides a usable alternative to <code>attachEvent</code>. Internet Explorer 7 and below has <code>attachEvent</code>/<code>detachEvent</code>. The callback function for <code>attachEvent</code> executes in global 
+    context (<code>this</code> is <code>window</code>), not the object it was attached to.</li>
+
+</ul>
+
+<p>
+    A good <dfn>Event Registry</dfn> solves these problems. A good <dfn>Event Registry</dfn> also allows for context resolution with an optional 
+    <code>thisArg</code>. A good <dfn>Event Registry</dfn> also allows custom events to be registered using the same interface.
+</p>
+
+<p>
+    A poorly designed <dfn>Event Registry</dfn> concerns itself with things related to native events (<code>DOMContentLoaded</code>, <code>keyPress</code>, et c). A poorly designed 
+    Event Registry does not pass an event object to the callback (perhaps trying to use <code>eval</code> to pass varargs). 
+</p>
+
+<h3>Error Handling in an <dfn>Event Notification System</dfn></h3>
+
+<h4>Callback Errors Should not Break the Registry</h4>
+<p>A good <dfn>Event Registry</dfn> does not allow any callback to break the registry.
+</p>
+
+<p>
+    One common problem in most <dfn>Event Notification System</dfn>s (such as Dojo, Mochikit, YUI, and jQuery) is that they allow the callback to break the System. If a callback fails, it prevents subsequent callbacks from firing. A callback should not be given the ability to break the <dfn>Registry</dfn>. 
+</p>
+
+<p>
+    Here's how to break a <dfn>Registry</dfn> that doesn't consider errors:
+</p>
+<pre>var passed = false;
+addCallback( link, "click", function(){ setTimeout(checkTitle, 500); } );
+addCallback( link, "click", function(){ throw Error('bad'); } );
+addCallback( link, "click", function(){ passed = true; } );
+
+function checkTitle(){ 
+    if(!passed) 
+        alert("registry broken: second callback did not fire.");
+    else 
+        alert('passed');
+}
+</pre>
+
+<p>
+    Callbacks sometimes throw Errors. It is important for the <dfn>Event Registry</dfn> to consider this and take the responsibility to handle these errors properly. If an error occurs in a callback, it should not break the <dfn>Registry</dfn>. 
+
+</p>
+
+<p>
+    It should be guaranteed that all callbacks fire, even when earlier callbacks throw errors. This is a natural 
+    expectation; it's exactly how DOM Events work:
+</p>
+
+<h4>DOM Events Test</h4>
+<div>
+<pre id="registry-dom-event-test">(function(){
+var s = document.getElementById('r-test');
+
+var el = document.getElementById("registry-dom-event-button");
+if(!window.hasDocumentListeners) {
+    el.addEventListener( "click", setUpCheck, false );
+    el.addEventListener("click", throwError, false );
+    // setTitle must fire.
+    el.addEventListener( "click", setTitle, false ); 
+
+    window.hasDocumentListeners = true;
+}
+function setUpCheck(){ setTimeout(checkTitle, 500); }
+function throwError(){ document.title = ""; throw Error('bad'); }
+function setTitle(){ document.title += 'ok'; }
+function checkTitle(ev) {
+    if(document.title != "ok") {
+        alert("DOM Events broken: setTitle did not fire. " + document.title );
+    }
+    else {
+        alert("passed");
+    }
+}
+})();</pre>
+<button id="registry-dom-event-button" onfocus="eval(document.getElementById(&#39;registry-dom-event-test&#39;).textContent)">eval</button>
+</div>
+<h4>Result and Analysis</h4>
+
+<p>There should be 1 error and an alert <kbd>passed</kbd>. This indicates that after the error happened, the <code>setTitle</code> callback successfully fired.
+</p>
+
+<p>
+    This example assumes:
+</p>
+
+<ul>
+    <li> Callbacks fire in the order in which they were registered. </li>
+
+    <li> The <kbd>bad</kbd> error in the first callback does not stop subsequent callbacks from firing. </li>
+    <li> The button supports the <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-Registration-interfaces"><code>EventTarget</code> interface</a> (not in IE7).
+</li>
+<li> The <code>button</code> supports onfocus (not in safari <a href="http://bugs.webkit.org/show_bug.cgi?id=16331">bug 16331</a>).
+
+</li>
+</ul>
+
+<h3>Proper Callback Error-Handling</h3>
+<p>
+    Throwing the error in a separate thread allows the callstack to continue without breaking. Any errors that are thrown 
+    are thrown in the correct order in the callstack. The <code>Event Publisher</code>'s <code>fire</code> 
+    function would have something like this:
+</p>
+
+<pre>try {
+// If an error occurs, continue the event fire,
+// but still throw the error.
+  callback.call( thisArg, ev );
+}
+catch( ex ) {
+  setTimeout("throw ex;", 1); 
+}
+</pre>
+
+<p>
+  The one subtle issue is that <code>setTimeout</code> uses global scope, like the Function constructor, not like eval, which runs in the calling context's scope. 
+</p>
+
+<p>
+  A closure must be used to preserve the <code>ex</code> variable.
+</p>
+
+<pre>try {
+// If an error occurs, continue the event fire,
+// but still throw the error.
+  callback.call( thisArg, ev );
+}
+catch( ex ) {
+  setTimeout(function(){ throw ex; }, 1); 
+}
+</pre>
+
+
+<h3>Event Registry Test</h3>
+<p>
+  The remaining problem with the above code is that the error condition is untestable. Writing a test suite forced me to realize this 
+  and I changed the design.
+</p>
+
+<pre>try {
+if(csi[0].call(csi[1], e) == false)
+  preventDefault = true; // continue main callstack and return false afterwards.
+}
+catch(ex) {
+  APE.deferError(ex);
+}
+</pre>
+
+<p>
+  Where <code>APE.deferError</code> is defined:
+
+</p>
+
+<pre>deferError : function(error) {		
+  setTimeout(function deferError(){throw error;},1);
+}
+</pre>
+
+<p>
+    I have included the source code for my own <dfn>Event Registry</dfn>, along with this 
+    <a href="http://dhtmlkitchen.com/ape/test/tests/EventPublisher-test.html" onclick="window.open(this.href);return false;">test</a>,
+    which shows how I managed to test <code>APE.deferError</code>.
+</p>
+
+<h3>Performance?</h3>
+
+<p>
+    Wrapping each callback call in a <code>try catch</code> might seem to be bad for performance. 
+    I tried it with mousemove event on my drag code, dragging multiple drag objects at a time 
+    (<a href="http://dhtmlkitchen.com/ape/example/drag/droptarget/">example</a>), and it seemed fast enough; I did not notice performance 
+    problems in any browser. There is most likely some performance overhead using this approach,
+    but I did not find a need to write a benchmark. 
+</p>
+
+<div class="gotcha">
+    <p>
+        <code>src</code> should never be a string. Although this may seem obvious, YUI actually allows <code>src</code> to be a string, 
+        where the string represents an element's ID. The document is polled regulary until 
+        the element with the <code>id</code> matching string is found and then the callback is attached to that element. If the element has been renamed, the document is still polled and silent failure occurs.
+    </p>
+
+    <p>
+        This can lead to silent failure or corrupted application state if the element is not found. It is not recommended. 
+    </p>
+</div>
+
+<h3>Packaging and API Design</h3>
+<p>
+    The <dfn>Event Notification System</dfn> is a low level component with no external dependencies.
+</p>
+
+<p>
+    Being a low level component, the <dfn>Event Notification System</dfn> should be maximally stable (no efferent couplings), and maximally abstract. In this case, the Event Notification system is maximally abstract because 
+    it can't be subclassed or used independently. 
+</p>
+
+<h3>Stable Dependencies Principle</h3>
+<p>Depend in the direction of stability</p>
+
+<h3>Stable Abstractions Principle</h3>
+<p>
+
+    A package should be as abstract as it is stable.
+</p>
+
+<h3>Reuse Equivalence Principle</h3>
+<p>
+    The Granule of Reuse is the Granule of Release.
+</p>
+
+<p>
+    The <dfn>Event Notification System</dfn> is a low level component with no external dependencies. It is intentionally 
+    packaged as a single, tested unit. It amplifies the essential (event notification) and eliminates the irrelevant.
+
+</p>
+
+<p>
+    Creating special cases for handling <acronym title="Document Object Model">DOM</acronym> events (<code>keyCode</code>, et c),
+    would reduce abstraction. These special cases are perfectly valid, but do not belong
+    in the <dfn>Registry</dfn>. Special case needs can either be hard-coded into end-implementation code 
+    (using feature/capability detection) or, if the special-case logic is complex, programmed into an object that performs a task (such as an Adapter object). 
+</p>
+
+<p>
+    An example of an Adapter object would be 
+    a <a href="http://dhtmlkitchen.com/learn/js/load/">Content Load Adapter</a> or a KeyEvent Adapter (key events are highly inconsistent across platforms).
+    Such objects would be slightly higher-level and, having at least one dependency, would be less stable (though this is not a bad thing).
+
+</p>
+
+<h3>Department Store JavaScript</h3>
+<p>
+    [insert_popular_library_name_here] usually include more code than any one application could possibly use in an attempt to 
+    cover the needs of every application. 
+</p>
+
+<p>
+    Libraries that add more functionality into one module than is usually needed, or create modules 
+    that are not cohesive do so in spite of commonly known software package design concepts. The one-stop library approach is appealing because it allows developers to "stop cobbling bits of javascript." 
+</p>
+
+<h3>Performance (Again)</h3>
+<p>
+
+    Load Time Performance problems can be acheived by creating custom javascript builds on the server. Hand-rolled "combination" files or utils files are fine for web sites with fewer pages. Sites that don't require 200k+ of additional javascript should not include such functionality.
+</p>
+            <!-- technorati tags start --><p style="text-align:right;font-size:10px;">Technorati Tags:
+<a href="http://www.technorati.com/tag/JavaScript" rel="tag">JavaScript</a>
+<a href="http://www.technorati.com/tag/Design%20Patterns" rel="tag">Design Patterns</a>
+<a href="http://www.technorati.com/tag/APE" rel="tag">APE</a>
+</p><!-- technorati tags end -->
+        </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  9:42 PM in 
+            <a href="http://dhtmlkitchen.com/?category=/uncategorized/" title="/uncategorized/">Uncategorized</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="./Event-Notification-System.html" title="Responses on &quot;Event Notification System&quot;">
+            		<span></span>Responses (3)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: Event-Notification-System -->
+
+                
+         
+        <!-- START: Permalink item -->
+        
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+            
+                                    <div class="comment">
+                <a name="response-1"></a>
+                            <strong><a href="http://dhtmlkitchen.com/?category=/uncategorized/&date=2008/01/04/&entry=Event-Notification-System#response-1">Comment</a>:</strong> <span class="author"><a href="http://thinkweb2.com/projects/prototype/">kangax</a></span> at Mon, 31 Mar 9:48 PM
+                <div class="post">Great post Garrett.
+<br>
+<br>I just fail to see why throwing error needs to be deferred. Could you please explain?
+<br>
+<br>Best,
+<br>kangax</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-2"></a>
+                            <strong><a href="http://dhtmlkitchen.com/?category=/uncategorized/&date=2008/01/04/&entry=Event-Notification-System#response-2">Comment</a>:</strong> <span class="author"><a href="http://dhtmlkitchen.com/">Garrett</a></span> at Sat, 5 Apr 12:45 AM
+                <div class="post">Throwing an error in a setTimeout ensures that the callbacks continue firing without breaking the registry. 
+<br>
+<br>Without that, an error in a callback stops all other callbacks from firing. It makes the registry extremely fragile.  Unfortunately, almost every event registry works this way.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-3"></a>
+                            <strong><a href="http://dhtmlkitchen.com/?category=/uncategorized/&date=2008/01/04/&entry=Event-Notification-System#response-3">Comment</a>:</strong> <span class="author"><a href="http://jibbering.com/faq/">Garrett</a></span> at Sat, 22 Jan 11:46 AM
+                <div class="post">For example, in jQuery, when an event callback throws an error, the system breaks, preventing callbacks from firing.
+<br><pre><br>jQuery(document).bind("click", 
+<br>// This function fires.
+<br>  function(){ 
+<br>    alert(2); 
+<br>    throw new Error("blah");
+<br>  }
+<br>);
+<br>jQuery(document).bind("click", 
+<br>// This function shold fire, but does not.
+<br>  function(){ 
+<br>    alert(2); 
+<br>    throw new Error("blah");
+<br>  }
+<br>);
+<br></pre>
+<br>With jQuery, the second callback won't fire. In contrast, with &lt;code&gt;document.addEventListener&lt;/code&gt;, all callbacks will fire.
+<br>
+<br>See also:
+<br>http://forum.jquery.com/topic/bug-the-left-event-handlers-will-be-ignored-after-error-was-thrown</div>
+                        </div>
+                                        <!-- START: Comment form -->
+            <h3>Your comment:</h3>
+            <form id="commentform" method="post" action="./Event-Notification-System.html">
+                <div>
+                    <input type="hidden" name="comment" value="y">
+                    <input type="hidden" name="entry_id" value="25">
+                    <input type="hidden" name="permalink" value="Event-Notification-System">
+                                                        </div>  
+                <div class="label"><label for="author">Author (<span class="red">*</span>):</label></div>
+                <div class="input"><input id="author" name="author" type="text" value="" class="fixed"></div>
+
+                <div class="label"><label for="authorEmail">E-mail:</label></div>
+                <div class="input"><input id="authorEmail" name="authorEmail" type="text" value="" class="fixed"><span>(not displayed)</span></div>
+
+                <div class="label"><label for="authorURL">URL:</label></div>
+                <div class="input"><input id="authorURL" name="authorURL" type="text" value="" class="fixed"></div>
+
+                <div class="label"><label for="commentText">Comment (<span class="red">*</span>):</label></div>
+                <div class="input"><textarea name="commentText" id="commentText" rows="7" cols="55" class="fixed"></textarea></div>
+
+                <div class="label">&nbsp;</div>
+                <div class="input"><label for="remember"><input id="remember" name="remember" type="checkbox"> Remember me?</label></div>
+
+                <div class="clear"></div>
+                
+                <!--
+                <div>
+					<label for="gatekeeper">
+						<span class="section">$GATEKEEPER_QA.getQuestion()</span> 
+						(<span class="mandatory">*</span>)
+					</label>
+					<input type="text" name="gatekeeper" id="gatekeeper" size="10" maxlength="128"/>
+				</div>
+-->
+                <div class="label">&nbsp;</div>
+                <div class="input"><input type="submit" name="submit" value="Comment" class="button"><input type="reset" name="reset" value="Reset" class="button"></div>
+
+                <div class="clear"></div>
+                
+            </form>
+        <!-- END: Comment form -->
+        
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>
+<div id="column">
+	 <div id="links">
+    <div id="blojsom">
+        <p><a href="http://blojsom.sf.net/" title="Blojsom project home page"><img src="./res/img/asual-poweredby.jpg" alt="Powered by blojsom"></a></p>
+    </div>
+</div>
+</div>		 <div id="logo"><a href="http://dhtmlkitchen.com/" title="DHTML Kitchen"><img src="./res/img/cuttingboard.png" alt="DHTML Kitchen"></a>
+	</div> 
+	<div class="AnimTree" id="contentScripts">
+		<h3 id="products">&nbsp;</h3>
+		<h4 class="nav-header">Tags</h4>
+		
+
+
+<ul>
+			<li><a href="http://dhtmlkitchen.com/?tq=APE">APE</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Browsers">Browsers</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=CSS">CSS</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Design%20Patterns">Design Patterns</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Google">Google</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=JavaScript">JavaScript</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Testing">Testing</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Threads">Threads</a>
+		</li>
+			<li><a href="http://dhtmlkitchen.com/?tq=Widget">Widget</a>
+		</li>
+	</ul>
+<h4 class="nav-header">Archived Scripts</h4>
+		<div class="button" id="animtree" title="Animated Menu Tree used for this site"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)"><img src="./res/img/bul_d.gif" alt="*">AnimTree</span>
+		</div>
+		<div class="menu" id="animtreeMenu">
+			<a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/index.jsp">AnimTree Home</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/demo/index.jsp">Demos</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/dl/index.jsp">Download</a><div class="button menuNode" id="AnimTreeTutorials" title="Dynamic tab pane navigation with cookie persistence used on this site">
+	<span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="" width="13" height="13">Tutorial</span>
+</div>
+<div class="menu menuNode" style="height: auto;" id="AnimTreeTutorialsMenu"><!-- XXX ie6 -->
+	<a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/index.jsp" title="AnimTree Tutorial Overview">0 - Overview</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/ingredients.jsp" title="The Ingredients: Putting the HTML, CSS, and JavaScript into the HTML">1 - Ingredients</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/html.jsp" title="The HTML structure that the demos use">2 - HTML Structure</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/events.jsp" title="onclick=&quot;toggleMenu(this)&quot;  onmouseover=&quot;buttonOver(this)&quot;  onmouseout=&quot;buttonOff(this)&quot;">3 - Event Handlers</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/css.jsp" title="Modifying the CSS">4 - Modifying the CSS</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/treeParams.jsp" title="Modifying the TreeParams">5 - TreeParams</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/persistentTree.jsp" title="PersistentTree Tutorial">6 - PersistentTree</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/api.jsp" title="Function Reference Page">7 - Function Reference</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/animtree/tutorial/faq.jsp" title="Frequently Asked Questions">8 - FAQ</a></div><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/animtree/buy/index.jsp">Buy AnimTree</a></div>
+	
+	
+		<div class="button" id="tabs" title="Dynamic tab pane navigation with cookie persistence used on this site"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)"><img src="./res/img/bul_d.gif" alt="*">Tabs</span>
+		</div>
+		<div class="menu" id="tabsMenu">
+			<a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/index.jsp">Tabs Home</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/demo/index.jsp">Demos</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/dl/index.jsp">Download</a><div class="button menuNode" id="TabsTutorials" title="Dynamic tab pane navigation with cookie persistence used on this site"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="" width="13" height="13">Tutorial</span>
+</div>
+<div class="menu menuNode" style="height: auto;" id="TabsTutorialsMenu"><!-- XXX ie6 -->
+	<a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/index.jsp" title="Tabs Tutorial Home">0 - Overview</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/ingredients.jsp" title="The ingredients — HTML, CSS, and JavaScript">1 - Ingredients</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/html.jsp" title="HTML Structure- explains the structure that the demos use">2 - HTML Structure</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/images.jsp" title="Using Images for tabs">3 - Using Images</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/tabparams.jsp" title="TabParams - control the behavior of the tabs">4 - TabParams</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/css.jsp" title="Modifying the CSS">6 - CSS - How To Modify</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/keyevents.jsp" title="Using Keyboard Events to trigger tabs">5 - Keyboard Events</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/navigation.jsp" title="Tab navigation: Using hash marks in the location; calling switchTabs">7 - Tab Navigation</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/api.jsp" title="TabSystem API Reference">8 - API Reference</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/tabs/tutorial/faq.jsp" title="Frequently Asked Questions">9 - FAQ</a></div><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/tabs/buy/index.jsp">Buy Tabs</a></div>
+	
+	
+		<div class="button" id="glidemenus" title="Drop down or fly out style menu"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)"><img src="./res/img/bul_d.gif" alt="*">GlideMenus</span>
+		</div>
+		<div class="menu" id="glidemenusMenu">
+			<a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/index.jsp">GlideMenus Home</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/demo/index.jsp">Demos</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/dl/index.jsp">Download</a><div class="button menuNode" id="GlideMenusTutorials" title="Animated Drop down, flyout style menus that meet section 508 and w3c standards.">
+	<span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="" width="13" height="13">Tutorial</span>
+</div>
+<div class="menu menuNode" style="height: auto;" id="GlideMenusTutorialsMenu"><!-- XXX ie6 -->
+	<a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/index.jsp" title="GlideMenus Tutorial Home">0 - Overview</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/ingredients.jsp" title="The ingredients — putting the images, scripts, and CSS into the HTML">1 - Ingredients</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/html.jsp" title="The HTML structure that the demos use">2 - HTML Structure</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/events/" title="Show and Hide Menus">3 - Event Handlers</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/css.jsp" title="Modifying the CSS">4 - CSS - How To Modify</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/glideparams.jsp" title="Modifying the GlideParams">5 - GlideParams</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/macns.jsp" title="Compatibility for Macintosh IE and Netscape 4">6 - Mac IE and NS4</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/api.jsp" title="Function Reference Page">7 - Function Reference</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/glidemenus/tutorial/faq.jsp" title="Frequently Asked Questions">8 - FAQ</a></div><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/glidemenus/buy/index.jsp">Buy GlideMenus</a></div>
+
+
+		<div class="button" id="draglib" title="Drag ’n Drop JavaScripts"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)"><img src="./res/img/bul_d.gif" alt="*">DragLib</span>
+		</div>
+
+		<div class="menu" id="draglibMenu">
+		<a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/index.jsp" title="What is DragLib?">DragLib Home</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/demo/index.jsp">Demos</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/dl/index.jsp">Download</a><div class="button menuNode last" id="draglibModules" title="Modules: Core, Slider, ColorPicker, SortableList"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="*">Modules</span>
+			</div>
+
+			<div class="menu" id="draglibModulesMenu" style="background-image: none;"><!-- XXX ie6 -->
+  
+				<div class="button menuNode" id="draglibCore" title="Drag ’n Drop JavaScript Component"><span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="*">Core</span>
+				</div>
+				<div class="menu" id="draglibCoreMenu"><!-- XXX ie6 -->
+					<a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/core/index.jsp">Core Module</a><div class="button menuNode" id="DragModuleTutorial" title="Dynamic tab pane navigation with cookie persistence used on this site">
+	<span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="" width="13" height="13">Tutorial</span>
+</div>
+<div class="menu menuNode" style="height: auto;" id="DragModuleTutorialMenu"><!-- XXX ie6 -->
+	<a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/core/tutorial/index.jsp" title="DragModule Tutorial Overview">0 - Overview</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/core/tutorial/reference.jsp" title="Instance Methods">1 - Reference</a><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/core/tutorial/targets.jsp" title="Adding and Removing Drop Targets">2 - Drop Targets</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/draglib/core/tutorial/handles.jsp" title="Creating Handles for DragObjects">3 - Handles</a></div><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/core/dl/">Download Core</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/draglib/core/buy/">Buy DragModule Core</a></div>
+				
+				<div class="button menuNode last" id="DragModuleSlider" title="Dynamic tab pane navigation with cookie persistence used on this site">
+					<span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="*">Slider</span>
+				</div>
+				<div class="menu" style="height: auto;background-image: none;" id="DragModuleSliderMenu"><!-- XXX ie6 -->
+					<a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/slider/index.jsp">Slider Home</a><div class="button menuNode" id="DragModuleTutorialSlider" title="Dynamic tab pane navigation with cookie persistence used on this site">
+	<span class="buttonlabel" onclick="toggleMenu(this)" onmouseover="buttonOver(this)" onmouseout="buttonOff(this)" style="font-size: smaller"><img src="./res/img/bul_d.gif" alt="" width="13" height="13">Tutorial</span>
+</div>
+<div class="menu menuNode" style="height: auto;" id="DragModuleTutorialSliderMenu"><!-- XXX ie6 -->
+	<a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/slider/tutorial/index.jsp" title="Slider Tutorial Overview">0 - Overview</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/draglib/slider/tutorial/reference.jsp" title="Instance Methods, Properties, and Event Handlers">1 - Reference</a></div><a class="menuNode" href="http://dhtmlkitchen.com/scripts/draglib/slider/dl/">Download Slider</a><a class="menuNode last" href="http://dhtmlkitchen.com/scripts/draglib/slider/buy/">Buy Slider</a></div>
+			</div>
+		</div>
+		
+	</div>
+<div id="navbar">
+	<a href="http://dhtmlkitchen.com/index.jsp" title="return to the front page" style="visibility: hidden">Home</a>
+	<a href="http://dhtmlkitchen.com/ape/" title="APE JavaScript Library">APE JavaScript Library</a>
+<a title="JavaScript FAQ" href="http://jibbering.com/faq/">FAQ</a><a title="DHTML Kitchen Customers and Affiliates" href="http://dhtmlkitchen.com/g/affiliates/index.jsp">Affiliates</a><a title="Contact DHTML Kitchen" href="http://dhtmlkitchen.com/g/contact/index.jsp">Contact</a></div>  
+<script type="text/javascript">
+<!-- 
+// This applies to all versions of IE.
+// IE does not properly handle height: 100%. All other browsers do.
+if( document.all && typeof contentScripts != 'undefined') {
+	setTimeout( 
+		"if(contents.offsetHeight < 440)"
+		+		"contents.style.height = '440px';"
+		+	"var adj = -1;"
+		+	"contentScripts.style.height=(contents.offsetHeight+adj)+'px';"
+		, 100);
+}		
+//-->
+</script><div id="footer">
+	<div id="copyright">© 2000-2007 Garrett Smith</div>
+	<a href="http://dhtmlkitchen.com/g/contact/?q=support">support</a>
+</div>
+</div>
+</body></html>

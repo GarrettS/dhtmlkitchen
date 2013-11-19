@@ -1,0 +1,1981 @@
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+	<title>DHTML Kitchen</title>
+	<link rel="shortcut icon" href='./favicon.ico' />
+
+	<link rel="Stylesheet" href="./res/css/1.css" />
+	<style type="text/css"></style>
+
+	<script src="./res/js/utils.js" type="text/javascript"></script>
+	<script src="./res/js/treeparams.js" type="text/javascript"></script>
+	<script src="./res/js/AnimTree.js" type="text/javascript"></script>
+	<!-- Meta Information -->
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="MSSmartTagsPreventParsing" content="true"/>
+	</head>
+	
+	<body>
+		<div id="contents" >
+			<!-- bv: /news/2010/09/09//JavaScript/?category=%2fJavaScript%2f&JSESSIONID=D2829981074C5F7B72206781D374F503&entry=JavaScript-Query-Engines&JSESSIONID=D2829981074C5F7B72206781D374F503&date=2010%2f09%2f09%2f&JSESSIONID=D2829981074C5F7B72206781D374F503 -->
+<div id="entries">
+				    
+            
+    
+    
+    
+
+    
+        
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="./?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines" title="Permalink of &quot;JavaScript Query Engines&quot;"
+        	>JavaScript Query Engines</a>
+        	<small class="date">Thursday, 9 September 2010</small>
+        	</h1>
+
+        
+        <div class="post">
+            <p>
+   By Garrett Smith, with editorial input from Scott Sauyet and Andrew Paulos. Technical and editorial feedback from kangax, and a ton of feedback Diego Perini and John-David Dalton.
+</p>
+
+<p>
+Most popular javascript libraries these days have a CSS Selector query engine. The concept originated from 
+<a href="http://dean.edwards.name/my/cssQuery/">CSSQuery</a> and was 
+popularized by jQuery. The idea is to match elements in the DOM based on a CSS selector string.
+</p>
+
+<p>
+   The <a href="#sel-normative">W3C Selectors API Level 1</a>, a Candidate Recommendation since 2009, 
+was started in 2006, based on CSS selectors.
+</p>
+
+<p>
+<a href="#sel-normative">CSS2</a> selectors have been around for over 12 years. 
+The syntax and concepts are easy to grasp and are well known &mdash; or are they? 
+</p>
+
+<p>
+What's the difference between the <a href="#sel-normative">W3C Selectors API</a> and 
+those found in javascript libraries? They're both based on CSS Selectors, 
+right? Aren't they all about the same? 
+</p>
+
+<p>
+It turns out they're not. There are many significant differences between 
+CSS Selectors[<a href="#sel-normative">CSS2</a>] and the 
+CSS Selector query engines defined in javascript libraries. 
+</p>
+
+<p>
+The differences are explained and demostrated by the library examples. 
+</p>
+
+<p>
+  When considering a Javascript library, it is important to examine the source 
+  code by review in order to make an informed decision about its quality. 
+</p>
+
+<h2>Library Examples</h2>
+<p>
+The examples demonstrate problems primarily in <a href="http://jquery.com">jQuery</a>, 
+but also in <a href="developer.yahoo.com/yui/2/">YUI 2</a>, 
+ <a href="developer.yahoo.com/yui/3/">YUI 3</a>, 
+ <a href="http://extjs.com/">Ext-JS</a>, 
+and <a href="http://sencha.com/">Sencha</a>. Listing every bug in each major library would 
+have been too much cover in the already lengthy article.
+</p>
+
+<h2>CSS3 Compliance</h2>
+<p>
+   To be CSS2 compliant, a CSS Selector Engine must follow the lexical grammar defined in the 
+   CSS2 specification to parse selector strings and perform correct matching on elements.
+</p>
+
+<p>
+  None of the libraries reviewed are compliant with any edition of CSS.  
+  The conformance violations are pretty obvious: Broken parsing, incorrect matching, errors 
+  thrown on CSS1 selectors and proprietary syntax extensions. These and other problems 
+  are explained below. 
+</p>
+
+<p>
+Although any library author is free to make any design decision he chooses, if the design decisions violate the CSS 
+specifications and drafts (and these do), then the code cannot honestly be said to be CSS3 compliant. 
+</p>
+
+<p>
+For example, <a href="http://jquery.com">jQuery.com</a> claims CSS3 Compliance and Ext-JS claims 
+"DomQuery supports most of the CSS3 selectors spec, along with some custom selectors and basic XPath". 
+Whether Ext supports more than half of CSS3 selectors depends on the browser; 
+the claim of "basic XPath" support is false (possibly outdated documentation from previous editions 
+which borrowed from jQuery). 
+</p>
+
+<h2>What do the Libraries Do?</h2>
+<p>
+The current javascript library APIs do not adhere CSS2 selectors[<a href="#sel-normative">CSS2</a>]. 
+Most implement nonstandard extensions and different behavior for standard selectors. All of them fail to 
+implement many pseudo-classes of CSS1-CSS3. Some match properties instead of attributes for attribute selectors.  
+They all tend to copy each other and the respective documentation of each doesn't always reflect reality. 
+They tend to change substantially between each release, removing support for XPath, redesign with 
+<code>document.querySelectorAll</code>, removing some selectors and adding others. 
+They tend to work differently in <abbr title="Internet Explorer">IE</abbr>, depending on the mode. The article will elaborate on cases of 
+these things happening in javascript libraries.
+</p>
+
+<h2>Cross Browser Consistency?</h2>
+<p>
+A few superficial tests in this article demonstrate significant problems in the cross browser behavior 
+of these libraries. More inconsistencies are revealed in Diego Perini's 
+<a href="http://javascript.nwbox.com/NWMatcher/release/test/css3-compat/">Index of CSS selector tests</a>.
+</p>
+
+<p>
+The supported browser list in jQuery includes 
+<abbr title="Internet Explorer">IE</abbr> 6.0+, FF 2+, Safari 3.0+, Opera 9.0+, and Chrome. 
+However all libraries tested have results within that set of browsers that are 
+inconsistent with the spec, inconsistent between browsers, and in the case of selectors extensions, 
+inconsistent with other libraries.
+</p>
+
+<h2>Problems Overview</h2>
+<p>
+Problems in jQuery, YUI2, YUI 3, Ext, and Sencha include:
+</p>
+<ol>
+	<li><a href="#broken-by-design">Broken by Design</a>
+	    <ul>
+          <li>Fundamentally broken abstractions and browser inconsistency.</li>
+          <li>
+              Native First Dual Approach, or <abbr title="Native-First, Dual">NFD</abbr> - Inconsistent. 
+              Variance based on NodeSelector presence/absence or errors thrown and handled with the library's fallback.
+          </li>
+          <li>
+      	      Syntax Extensions - nonstandard and inconsistent.
+	      </li>
+		  <li>
+             Incorrect Documentation.
+          </li>
+        </ul>
+	</li>
+    <li>
+    <a href="#broken-parsing">Broken Parsing</a>
+	<ul>
+      <li> Fails to ignore various whitespace in attribute values, as <code>a[name= bar\n\t]</code> (YUI2, Ext);
+      </li>
+      <li> Not throwing errors on invalid, unhandled input.
+      either returning a result that is either empty or contains elements (All: YUI2, YUI3, Ext, Sencha, jQuery).
+      </li>
+      <li> Parse multiple adjacent whitespace as multiple descendant selector.
+        (Ext)
+      </li>
+      <li> Fail to parse certain whitespace in descendant selector (YUI 2).
+      </li>
+      <li> Splitting input on <code>","</code> &mdash; this breaks attribute selectors where the attribute value contains a comma
+       (e.g. <code>"[title='Hey, Joe']"</code>); (Ext, Sencha).
+      </li>
+    </ul>
+	</li>
+
+	<li><a href="#broken-matching">Broken Matching</a>
+	  <ul>
+        <li>Universal selector mismatches
+        </li>
+        <li>Attributes vs properties mistakes
+        </li>
+        <li>Pseudo-class selectors returning every element or throwing errors
+        </li>
+        <li>Case sensitivity applied to case-insensitive attributes 
+        </li>
+	  </ul>
+    </li>
+</ol>
+
+<h2>Problems Details</h2>
+<ol>
+  <li>
+  <h3>
+  	  <a id="broken-by-design" href="#broken-by-design">Broken by Design</a>
+  </h3>
+  <p>
+  The biggest problems are the design issues, this includes <abbr title="Native-First, Dual">NFD</abbr> 
+  approach and reliance on fundamentally broken abstractions. Some problems such 
+  as psuedo-class related bugs are seen in parsing and matching. These bugs cannot be as neatly fixed. 
+  </p>
+  
+  <ul>
+  <li>
+    <h4>Fundamentally Broken Abstractions</h4>
+    <p>
+       A fundamentally broken abstraction is an abstraction that <dfn>cannot</dfn> 
+       function consistently across browsers.
+    </p>
+    
+    <p>
+       The reviewed libraries' query selector engines are an example of a fundamentally 
+       broken abstraction. (Though the problems in the libraries reviewed go beyond the bugs that 
+       are seen in the query engines).
+    </p>
+        
+    <p>
+       You might be thinking something like:&mdash;
+       "Hey, nothings' perfect, right?", or "The libraries have a large user base;
+       they can't be <em>that</em> broken, can they?" or "Can't the bugs be fixed?"
+       Those things have all been said and although fixing the bugs might seem like 
+       the right thing to do, in reality it can get complicated. 
+    </p>
+
+    <p>
+       For an example of fundamentally broken abstractions, see 
+       <a href="http://groups.google.com/group/comp.lang.javascript/browse_thread/thread/ab729e7cd6ee78f6"
+       >Sencha Touch--Support 2 browsers in just 228K!</a>, 
+       <a href="http://newsgroups.derkeiler.com/Archive/Comp/comp.lang.javascript/2010-01/msg00609.html"
+       >SproutCore--over 20000 lines of new code!</a>, and more of the library excerpts in this 
+       article below.
+    </p>
+    
+    <h5>Dependencies, Consistency, and Change</h5>
+    <p>
+       Any change to a low-level abstraction propagates to its dependencies.  
+    </p>
+    
+    <p>
+       Fixing bugs in a low level module creates instability which can break things (like jQuery plugins or widgets). 
+       Before attempting to fix any bug, the author must first get an understanding 
+       of the problem(s) caused by his code. In the case of a fundamentally broken abstraction,
+       one choice may be to not attempt to fix the bug but to leave it and deprecate the method.
+       If the bug is a core part of the library, it may be possible to refactor the library to not 
+       use that method. If that cannot be done (as is the case for the reviewed libraries) then not 
+       using the library is probably the best option.
+    </p>
+    
+    <p>
+       Most libraries that use a selector engines do so at a lower level. Each bug in 
+       library's selector engine propagates to a higher level. If the selector engine's 
+       behavior is changed, as by fixing a bug, that change is propagated to all of the 
+       higher level dependencies. Such behavioral changes cause instability. The alternative 
+       to making such changes (and causing instability) is to not fix the bugs. 
+    </p>
+    
+    <p>
+       The infamous <code>dojo.isArray</code> is one example of a bug in a 
+       low-level abstraction that was not fixed and despite having been pointed out over 
+       many discussions over many years on comp.lang.javascript, es-discuss mailing list,
+       and most recently on Ajaxian.com. The problems with the method are that it doesn't work 
+       cross-frame, it can return non-boolean values (<code>0</code>, <code>null</code>, 
+       <code>undefined</code>), and has a useless statement (<code>typeof it == "array"</code>). 
+       The method will, however, have consistent results across browsers.
+    </p>
+    
+    <p>
+       However, sometimes an abstraction fails to work consistently across browsers. 
+       This is often due to a limitation in a browser. 
+    </p>
+    
+    <p>   
+       The author who has come to recognize such problem in the code is faced with the 
+       decision to either attempt to get the abstraction working correctly across browsers, 
+       leave it alone, or fix it to work correctly in some cases, while attempting 
+       to minimize change.
+    </p>
+    
+    <p>
+       Due to the generalized nature of the 
+       function, every case cannot be addressed. The result of attempting to make it work is 
+       bloat and complexity. The code becomes difficult for the author to understand 
+       and clients of the API are confused by inconsistent results, both with various inputs 
+       to the function and with versions of the API. The paradox is that if the author does not 
+       fix the bugs, then some instability can be avoided, but at a cost of inconsistency between 
+       browsers.  
+    </p>
+    
+    <p>   
+       One example of this is the attributes problem in Internet Explorer 7 and below 
+       (IE8 fixed most of the issues). Generalized functions that attempt to make <abbr title="Internet Explorer">IE</abbr> 
+       correctly read attributes are more trouble and effort than it is worth. Instead, the 
+       problems of reading attributes can be recognized as a limitation and the design of the 
+       system can avoid doing that. By avoiding doing that, the problems 
+       associated with doing that are avoided.
+    </p>
+    
+    <p>
+       The best solution for such abstractions is to know what you are doing. Do not 
+       create them in the first place. 
+    </p>
+    
+    <p>
+       Any library that relies a broken query selector at the core is just as broken 
+       as its query engine. Fixing the query engine bugs causes instability and the 
+       browser inconsistencies are unacceptable. 
+    </p>
+  </li>
+  <li>
+    <h4>Native-First Dual Approach</h4>
+    <p>
+    The most significant query selector problem is the design approach that I am calling a <dfn>native-first dual</dfn>
+    (<abbr title="Native-First, Dual">NFD</abbr>) approach. <abbr title="Native-First, Dual">NFD</abbr>  
+    creates great inconsistencies between different browsers running the same code. The approach is to first try 
+    to use <code>document.querySelectorAll</code> where it supported and where that is either unsupported or where 
+    calling it throws an error, a fallback selector matching engine is used.  
+    </p>
+    
+    <p>
+       Because an error will happen when any proprietary selector is used, the code path taken varies, 
+       depending not just on the browser, but on the selector supplied. The library addresses these 
+       errors by wrapping every call to <code>document.querySelectorAll</code> in a 
+	   <code>try</code> / <code>catch</code>. For jQuery, in the catch block, the query selector engine 
+	   is called <code>oldSizzle</code>. In some cases, <code>oldSizzle</code> will throw an error where 
+	   <code>document.querySelector</code> all would have 
+       returned a result, such as with <code>:focus</code>. 
+    </p>
+    
+    <p>
+       jQuery's <code>oldSizzle</code> does not support the same input and standard selectors as 
+       <code>querySelectorAll</code>. The differences noticeable in the results of simple queries 
+       can vary widely across browsers, as seen in the examples further on. Any library that uses 
+       <abbr title="Native-First, Dual">NFD</abbr> (Ext and YUI, among those) will exhibit the same problems.
+    </p>
+    
+    <p>
+    Libraries that use <abbr title="Native-First, Dual">NFD</abbr> include jQuery, YUI 3, and Ext-js, among others.
+    Sencha, which is related to Ext-js, uses a different approach. YUI 2 does not use 
+	<code>document.querySelectorAll</code>.
+    </p>
+
+	<div class="text-diagram">
+    <h5>Native-first Dual Approach Diagram</h5> 
+<pre>
+&lt;Native QSA Support?&gt;
+ Y              N
+ |              |
+ |              |
+[Try Use QSA]   +--[Use oldSizzle]
+  |                /   |  
+ &lt;error thrown?&gt;  /  &lt;oldSizzle Supports Input?&gt;
+  Y             N/         Y            N
+  |             /          |      [Throw error]
+  |            /|          |            |           
+[Use oldSizzle] |   [perform match      |
+                |    and return result] |
+                |          |            |
+           [return result] |            |
+                |          |            |
+               <b>END</b>        <b>END</b>          <b>END</b>
+  </pre>
+    <p>
+    Diagram of native-first dual approach. Notice the three different possible endings.
+    </p>
+</div>    
+    <p>
+    In addition to the code path variations, native support is buggy. For example, in Internet Explorer 8, 
+    <code>&lt;option selected&gt;text&lt;/option&gt;</code> isn't matched by <code>[selected]</code> 
+    but is matched by <code>[selected=selected]</code>.
+    </p>
+    
+	</li>
+	<li>
+    <p>
+    The <abbr title="Native-First, Dual">NFD</abbr> approach is the most 
+	significant and fundamental mistake that a selectors library can make. It is 
+	<dfn>broken by design</dfn>.
+    </p>
+    
+    <h3>Syntax Extensions</h3>
+    <p>
+    Some examples of syntax extensions include variations on what jQuery calls bare words attribute selectors, 
+	<code>[att!=val]</code>, CSS Style value selectors (in Ext), and even user-defined selectors. 
+    </p>
+    <p>
+    A W3C-compliant Selectors engine is required to throw errors on any invalid syntax in the selector, 
+	such as those extensions defined by jQuery.
+    </p>
+    <p>
+    Instead of throwing an error, jQuery interprets <code>[att!=val]</code> as a property selector (described below).  
+	How a library interprets the syntax extension is nonstandard, proprietary, and may vary between libraries.
+    </p>
+    <p>
+    Ext provides additional syntax extensions to match style values. For example, to match 
+	all the elements whose visibility is <code>"inherit"</code>, one would use:
+    </p>
+    <pre>
+  [
+    Ext.query("{visibility=inherit}").length,
+    Ext.query("{visibility=visible}").length
+  ]
+</pre>
+    <p>
+        That code running on the <a href="./test/blog/selectors/ext.html">Ext test page</a> results:
+    </p>
+	<dl>
+		<dt>Internet Explorer (all versions)</dt>
+		<dd>18, 0</dd>
+		<dt>Safari 4, Opera 10.6, Firefox 3.6*, Firefox 2</dt>
+		<dd>0, 18</dd>
+	</dl>
+	<p>
+    The <code>"visibility=inherit"</code> result in Internet Explorer is an array of 18 elements,
+	and <code>0</code> in other browsers. This is due to the fact that Ext.query 
+    relies on <code>Ext.Dom.getStyle</code>, which checks <code>currentStyle</code> in 
+    <abbr title="Internet Explorer">IE</abbr> and calls <code>getComputedStyle</code> 
+	in other browsers. 
+    </p>
+	
+	<p>
+	   The result is only acheived when there is no trailing whitespace, as 
+	   <code>"{visibility=visible}"</code>, and not <code>"{visibility=visible }"</code>.
+	</p>
+	
+	<p class="footnote">
+	   *Firefox results with plugins disabled. 
+	   Some plugins such as Firebug add nodes to the document which will affect
+	   the result you see in your browser.
+	</p>
+    </li>
+	<li>
+	<h4>Incorrect Documentation</h4>
+	<p>
+	   The documentation for most of the libraries tends to be out of sync with what 
+	   the code actually does. The most egregious offenders are Sencha and Ext-js.
+	</p>
+	<p>
+	   This is yet another compelling reason for anyone evaluating a library 
+	   to carefully review the source code. The code explains exactly what it does. 
+       Does the code clearly reflect what is stated in the documentation?
+    </p>
+    <p>
+       If, when examining the source code, it is realized that the 
+	   code is written obscurely, such as using long methods with high degree of complexity,
+	   then it may be best to avoid using the library on that basis because 
+       at some point, a part of the application will inevitably need to be debugged and  
+       long, complicated methods such as those found in jQuery can be painfully time consuming
+       to step through.
+	</p>
+	</li>
+  </ul>
+</li>
+<li>
+  <h3>
+  	  <a id="broken-parsing" href="#broken-parsing">Broken Parsing</a>
+  </h3>
+  <p>
+     CSS2.1 defines the grammar by which tokens are matched. 
+     None of the libraries tested are compliant with that grammar. 
+     Most fail in very obvious ways. Some of the problems include:
+  </p>
+  <ul>
+        <li> Fails to ignore various whitespace in attribute values, as <code>a[name= bar\n\t]</code> 
+        (<a href="#ref-test">YUI2</a>, <a href="#ref-test">Ext</a>);
+        </li>
+        <li>Not throwing errors on invalid, unhandled input.
+     <p>
+     Matches invalid selectors <code>">>>"</code>, <code>"[name=]"</code>, <code>"[a >= 2]"</code>, <code>"#---"</code>, 
+         either returning a result that is either empty or contains elements 
+         (<a href="#ref-test">All</a>: YUI2, YUI3, Ext, Sencha, jQuery).
+     </p>
+        </li>
+        <li> Parse multiple adjacent whitespace as multiple descendant selector.
+          (<a href="#ref-test">Ext</a>)
+        </li>
+        <li> Fail to parse certain whitespace in descendant selector (<a href="#ref-test">YUI 2</a>).
+        </li>
+        <li> Splitting input on <code>","</code> &mdash; this breaks attribute selectors where the attribute value contains a comma
+         (e.g. <code>"[title='Hey, Joe']"</code>); (<a href="#ref-test">Ext</a>, <a href="#ref-test">Sencha</a>).
+        </li>
+  </ul>
+    
+  <h4>Fails to ignore various whitespace in attribute values</h4>
+  <p>
+    Of the tested libraries, jQuery seems to be the only one that is able parse (though not according to standard) 
+    and ignore extraneous whitespace in attribute selectors 
+    (though it fails to match attribute values properly). 
+  </p>
+  <p>Given the HTML</p>
+  <pre>
+  &lt;a name="bar"&gt;
+</pre>
+  And selector string:
+  <pre>
+  "a[name= bar\n\t]";
+</pre> 
+  <p>YUI2 and Ext will not match the <code>a</code> element.</p>
+  
+  <h4>Not throwing errors on Invalid, Unhandled Input</h4>
+  <p>
+  All of the tested libraries allow invalid selectors such as <code>"#---"</code>.
+  </p>
+  
+  <p>
+  YUI and Ext both fail on the descendant selector, as explained below.
+  </p>
+  
+  <p>
+    Ext and Sencha split the input on ",", and so will fail with the basic selector '[title="Hello, user"]'. 
+    Of course, it will also fail for any valid Identifier that contains an escaped , as in "#x\\,", 
+    which is a perfectly valid selector and works perfectly find when supplied as an 
+    argument to document.querySelector. 
+  </p>
+  
+  <p>
+    The fallback query selector engines in javascript libraries do not follow the lexical grammar defined in CSS2. 
+    A library that accepts invalid selectors suffers more problems when it uses an 
+    <abbr title="Native-First, Dual">NFD</abbr> approach, no invalid syntax extensions 
+    may be allowed because any such allowance creates more possibility for variance 
+    (depending on browser, version, selector string, etc, 
+    see <abbr title="Native-First, Dual">NFD</abbr> above).
+  </p>
+  
+  <h3>Descendant Selector</h3>
+  <p>
+  A <a href="#sel-normative">Descendant Selector</a> is two or more selectors separated by whitespace. 
+  Whitespace is defined in CSS as: Only the characters "space" (<code>U+0020</code>), "tab" 
+  (<code>U+0009</code>), "line feed" (<code>U+000A</code>), "carriage return" (<code>U+000D</code>), 
+	 and "form feed" (<code>U+000C</code>) can occur in white space. Other space-like characters, such as 
+	 "em-space" (<code>U+2003</code>) and "ideographic space" (<code>U+3000</code>), are never part 
+     of white space. 
+  </p>
+  <p>
+  YUI 2 and Ext 3.2.1 both fail on the descendant selector. 
+  </p>
+
+  <h4>Fail to parse certain whitespace in descendant selector</h4>
+  <p>
+  YUI 2 fails by inconsistently throwing errors with anything other than <code>U+0020</code> (space). 
+  For example, using a tab character, as in <code>"html\u0009body"</code> will, depending on the 
+  browser, throw an error with YUI2.
+  </p>
+
+  <h4>Parsing multiple adjacent whitespace as multiple descendant selector</h4>
+  <p>
+  Ext 3.2.1 fails by treating multiple adjacent whitespace as multiple selectors, thus:
+  </p>
+<pre>
+Ext.query("html  body"); // two spaces 
+</pre>
+  <p>
+  - matches 0 elements, depending on the browser.
+  </p>  
+</li>
+
+<li>
+  <h3>
+  	  <a id="broken-matching" href="#broken-matching">Broken Matching</a>
+  </h3>
+	  <ul>
+        <li>Universal selector mismatches
+        </li>
+        <li>Attributes vs properties mistakes
+        </li>
+        <li>Pseudo-class selectors returning every element or throwing errors
+        </li>
+        <li>Case sensitivity applied to case-insensitive attributes 
+        </li>
+	  </ul>
+  <h4>Universal selector mismatches</h4>
+  <p>
+  The universal selector, written <code>"*"</code>, matches any single element in the document tree 
+  (<a href="#sel-normative">CSS 2.1</a>). The selector is broken in jQuery 
+  (<a href="#ref-test">see test</a>).
+  </p>
+  
+  <h4>Attributes vs properties mistakes</h4>
+<p>
+   Attributes are string values that the browser parses from the HTML source code.
+   Properties reflect an object's state with any value type (number, boolean, function, etc).
+</p>
+<p>
+   Most libraries have significant problems with attribute matching, beginning with 
+   library progenitor of the confusion: jQuery.
+   These problems are shown below in the <a href="#attributes-vs-properties"
+   >jQuery Attributes vs Properties examples</a>
+</p>
+
+  <h4>Psuedo-class problems</h4>
+  <p>
+  Pseudo-class problems include returning every element or throwing errors inconsistently.
+  </p>
+  <p>
+  In an <abbr title="Native-First, Dual">NFD</abbr>-based library, when the fallback is used, 
+  Pseudo-class such as <code>:focus</code> and <code>:active</code> 
+  will either return every element or throw errors. For example:
+  </p>
+<pre>
+:link[rel!=nofollow]; // force fallback with custom != selector.
+</pre>
+<dl>
+<dt>  Ext</dt>
+<dd>
+<code class="error">
+TypeError: Ext.DomQuery.pseudos[name] is not a function
+</code>
+</dd>
+<dt>
+jQuery:
+</dt>
+<dd>
+<code class="error">
+Syntax error, unrecognized expression: Syntax error, unrecognized expression: link
+</code>
+</dd>
+<dt>
+YUI 2:
+</dt>
+<dd>
+<code>[] // (empty result)
+</code>
+</dd>
+<dt>
+YUI 3:
+</dt>
+<dd>
+<code class="error">
+Error thrown and not caught: name: TypeError, message: methodName is undefined
+</code>
+</dd>
+</dl>
+  <p>
+     These same libraries will all return a match for valid selector syntax <code>:link</code> 
+     in a browser that supports <code>document.querySelectorAll</code> because they use the 
+	 <abbr title="Native-First, Dual">NFD</abbr> approach. 
+  </p>
+  <p>
+  	 The <code>:link</code> pseudoclass is specified in CSS to match all unvisited 
+	 links. Most browsers that implement <code>NodeSelector</code> for <code>:link</code> 
+	 match <em>all</em> links, regardless of whether or not they have been visited.
+	 This is allowed by <a href="http://www.w3.org/TR/2009/WD-css3-selectors-20090310/#dynamic-pseudos"
+	 >Selectors Level 3 Working Draft</a> and is done to prevent scripts from examining 
+	 a user's history.
+  </p>
+  <p>
+  	 Throwing errors in one browser while returning a match in another is not interoperable. 	 
+	 It would be better to either throw an error for <code>:link</code> everywhere 
+	 or to support <code>:link</code> everywhere by matching on all links.
+  </p>
+  
+  <h3>Case Insensitive Attribute Values Treated Case-sensitively</h3>
+  <p>
+  Are attribute values case sensitive or case insensitive? 
+  </p>
+  
+  <p>
+  The CSS2 specification states:
+  </p>
+  <blockquote>
+    <p>
+    The case-sensitivity of attribute names and values in selectors depends on the document language. 
+    </p>
+  </blockquote>
+  <p>
+  In <a href="#sel-normative">HTML 4</a>, each attribute definition includes information about the 
+  case-sensitivity of its value. Examples of case-insensitive (CI) attribute values 
+  include <code>INPUT</code> element's <code>type</code> and <code>name</code> attributes 
+  and the <code>FORM</code> element's <code>action</code> and <code>method</code> attributes, 
+  among many others. Some case sensitive (CS) attribute values include the global <code>id</code> 
+  attribute, and, for the <code>A</code> element, the <code>name</code> attribute.
+  </p>
+  
+  <p>
+  Thus, <code>[method=GeT]</code> must match <code>&lt;form method='get'&gt;</code> while <code>[name=Q]</code> 
+  would match <code>&lt;input name="q" type="text"&gt;</code> and not <code>&lt;a name="q"&gt;</code>. 
+  </p>
+  
+  <p>
+  To add to the confusion, <a href="#sel-normative">HTML5</a> defines a <em>global</em> 
+  <a href="http://www.whatwg.org/specs/web-apps/current-work/multipage/links.html#selectors"
+  >case sensitivity map</a> that conflicts with what is defined by HTML 4 for some specific 
+  element attributes. For example, HTML 5 states that <code>NAME</code> is case-<em>sensitive</em>.
+  Contrast to HTML 4, where <code>NAME</code> is specified as being case-insensitive for <code>INPUT</code> 
+  (but case-sensitive for <code>a</code>).
+  </p>
+  
+  <p>
+  Browser implementations vary.
+  </p>
+  
+  <p>
+     Internet Explorer 8 and below will correctly match the <code>INPUT</code> element's 
+     <abbr title="Case Insensitive">CI</abbr> <code>NAME</code> 
+     attribute value in a case-insensitive manner while many other browsers will not.
+  </p>
+  
+  <p>
+    For the most consistent and interoperable behavior, authors are advised to not rely on 
+    case-insensitive attribute value matching for <code>NodeSelector</code> but to instead supply 
+    the case in the selector string as it appears in the source markup.
+  </p>
+    
+  <p>
+     Although most libraries account for case insensitivity in element and attribute names, 
+     they do not account for case insensitive attribute values. 
+  </p>
+  
+  <p>
+     While implementations vary, the javascript library query engines pass the variance 
+     right on to their callers, providing inconsistent results.
+  </p>
+  
+  <p>
+     A javascript library could provide consistent cross-browser results by either
+  </p>
+  
+  <ul>
+   <li> supporting no attribute selectors
+   </li>
+   <li> providing a case-sensitivity map. 
+   </li>
+  </ul>
+  
+  <p>
+    <a href="http://javascript.nwbox.com/NWMatcher/">NWMatcher</a> provides a case-sensitivity map. 
+    However it does not do so on a per element basis, but instead element-agnostically. 
+    NWMatcher follows the <a 
+    href="http://www.whatwg.org/specs/web-apps/current-work/#selectors">recommendation from HTML5</a>.
+  </p>
+  
+  <p>
+  Not all browsers will follow that case sensitivity map, which is a part of a draft. 
+  </p>
+  
+  <p>
+  Attribute selectors involve conflicts and interdependencies between working drafts HTML5, and CSS2.1 (PR) the 
+  official standard HTML 4.01, and conflicting implementations.
+  </p>
+  
+  <p>
+  A program using lower case attribute values except in cases for <code>ID</code>, <code>CLASS</code>, and 
+  <code>NAME</code>, can avoid many of the differences, however that doesn't change the problem of a 
+  javascript library that runs on a page with form <code>name="F1"</code> and uses a query selector 
+  <code>[name="f1"]</code>.
+  </p>
+  
+  <p>
+  A javascript query library can avoid these problems by disallowing attribute selectors altogether. It can do this by 
+  throwing an error on any unsupported syntax. The strategy is explained below.
+  </p>
+</li>
+</ol>
+<h3>jQuery Selectors Quiz</h3>
+<p>
+   Not long before writing this article, I published a <a href="./jstest/jquery/quiz.jsp">quiz</a> 
+   of 10 multiple-choice questions of simple, common selectors being applied to 9 lines of HTML. I did this after 
+   the jQuery team had <a href="https://twitter.com/jquery/status/13674858690">tweeted</a> about an 
+   <a href="http://www.tuttoaster.com/some-good-and-advanced-jquery-techniques">article</a> demonstrating 
+   invalid selector syntax using jQuery's "bare words" attribute/property selector to match property values instead 
+   of attributes. The confusion that jQuery has helped propagate was to blur the distinction between properties and 
+   attributes. That confusion was shown in the article, which had espoused such invalid techniques and which jQuery had endorsed.
+</p>
+<h4>Tweet</h4>
+<blockquote>
+<p>
+Some Good and Advanced jQuery Techniques - <a href="http://bit.ly/dli5EN">http://bit.ly/dli5EN</a>  
+9:01 AM May 9th
+</p>
+</blockquote>
+
+<p>
+   It seems surprising that the jQuery team would promote that, especially light of all the attention 
+   that has been paid to the broken <code>ATTR</code> function (explained below).
+   My response to that was to question the reader of what that code actually does. 
+</p>
+
+<p>
+   For each correct answer submitted, the quiz-taker is presented with the explanation of why the 
+   answer is correct. At the bottom of the quiz are two example documents that display the results of each question. 
+</p>
+
+<h4>Example HTML from Quiz</h4>
+<pre id="example">
+1.   &lt;img width="600" src="logo.gif" id="imageOne" style="display: none" alt="Write less"&gt;
+2.   &lt;img src="logo.gif" id="imageTwo" alt="Do More!"&gt;
+3.   &lt;img width="100" src="logo.gif" id="imageThree"  alt="Write less"&gt;
+4.   &lt;img width="0" src="logo.gif" id="imageFour"  alt="Write less"&gt;
+5.   &lt;input type="image" width="600" src="logo.gif" id="inputOne" alt="Write less"&gt;
+6.   &lt;input type="image" width="100" src="logo.gif" id="inputTwo" alt="Do More!"&gt;
+7.   &lt;input type="image" src="logo.gif" id="inputThree" alt="Write less"&gt;
+8.   &lt;input type="image" src="logo.gif" width="0" id="inputFour" alt="Write less"&gt;
+
+9.   &lt;pre&gt;-&lt;/pre&gt;
+</pre>
+
+<p>
+Test results (<a href="./jstest/jquery/ex.html">standards</a>, 
+<a href="./jstest/jquery/exq.html">quirks</a>).
+</p>
+
+<p>
+No tricky edge cases, however as shown in the test, the answers vary between browsers, with surprising results.
+</p>
+
+<p>
+The <a 
+href="http://www.tuttoaster.com/some-good-and-advanced-jquery-techniques">jQuery-tweeted article</a> 
+espouses the use of <code>$('img[width=600]')</code> to get <cite>"All the images whose width is 600px"</cite>.  
+That's different from the W3C Selectors API (draft)[<a href="#sel-normative">SELECT</a>] specifies. 
+</p>
+
+<p>
+If the attribute's value were quoted, as <code>img[width="600"]</code>, then standard behavior for that 
+query should match img elements whose width attribute is exactly the value "600", never mind if has been rendered at 600px.
+</p>
+
+<p>
+In contrast, the Selectors API[<a href="#sel-normative">SELECT</a>] specifies that an error should be thrown when 
+invalid syntax is supplied. Since <code>600</code> is neither a string nor an identifier, the entire selector is invalid. 
+A compliant Selectors implementation must throw an error with that.
+</p>
+The Selectors API Level 1[<a href="#sel-normative">SELECT</a>] states:
+<blockquote>
+<p>If the given group of selectors is invalid ([<a href="http://www.w3.org/selectors-api/#SELECT">SELECT</a>], section 13),
+the implementation must <a 
+href="http://www.w3.org/DOM-Level-3-Core/core.html#DOMException-SYNTAX_ERR"
+>raise a SYNTAX_ERR exception</a>.
+</p>
+</blockquote>
+
+CSS 2.1[<a href="#sel-normative">CSS2</a>] states:
+<blockquote>
+<p>
+Attribute values must be identifiers or strings. 
+</p>
+</blockquote>
+And also:
+<blockquote>
+<p>
+When a user agent cannot parse the selector (i.e., it is not valid CSS2.1), it must 
+<a href="http://www.w3.org/TR/CSS2/syndata.html#ignore">ignore</a> the selector and 
+the following declaration block (if any) as well. 
+</p>
+</blockquote>
+
+<h3>Selector Extensions and CSS3 Compliance</h3>
+<p>
+Many selector libraries do not throw an error when given invalid selector syntax. 
+Instead, the library interprets the invalid selector as a property selector (described below). 
+</p>
+
+<p>
+ In the case of jQuery being passed an attribute selector, 
+ the <code>ATTR</code> function is used to match a property value. 
+</p>
+
+<p>
+   Other libraries will do different things. Some may match attribute values while others do not. 
+   None of the javascript libraries are CSS3 compliant.
+</p>
+
+<p>
+Before looking at the results of how jQuery handles attribute selectors, some definition of terms is in order.
+</p>
+
+<h4>Attribute Selectors</h4> 
+<p>
+Standard CSS 2.1 attribute selectors match attributes defined in the source document. Any attribute value must be 
+either a string or an identifier. In CSS2.1, a string is delimited either by single or double quote marks 
+and an identifier is defined:
+</p>
+
+<h4>CSS Identifier</h4>
+<p>
+In CSS, identifiers (including element names, classes, and IDs in selectors) can contain only the 
+characters [a-zA-Z0-9] and ISO 10646 characters U+00A1 and higher, plus the hyphen (<code>-</code>) and the 
+underscore (<code>_</code>); they cannot start with a digit, or a hyphen followed by a digit. Identifiers can 
+also contain escaped characters and any ISO 10646 character as a numeric code (see next item). For 
+instance, the identifier "<code>B&amp;W?</code>" may be written as "<code>B\&amp;W\?</code>" or "<code>B\26 W\3F</code>". 
+</p>
+
+<p>
+The definition is unfortunately looser than what is defined by the lexical grammar of CSS, which disallows identifier beginning 
+with a hyphen followed by a hyphen, however the libraries don't match either definition 
+(see also CSS WG <a href="http://wiki.csswg.org/spec/css2.1#issue-174">bug #174</a>).
+</p>
+<p>
+CSS identifier is also used in class and ID selectors.
+</p>
+<p>
+CSS 2.1 defines four attribute selectors:
+</p>
+
+<pre>[att]</pre>
+    <p>
+	   Match when the element sets the "att" attribute, whatever the value of the attribute.
+	</p> 
+<pre>[att=val]</pre>
+    <p>
+	   Match when the element's "att" attribute value is exactly "val".
+	</p> 
+<pre>[att~=val]</pre>
+    <p>    
+   	  Represents an element with the att attribute whose value is a white space-separated list of words, 
+      one of which is exactly "val". If "val" contains white space, it will never represent anything 
+      (since the words are separated by spaces). If "val" is the empty string, it will never represent anything either. 
+    </p>
+<pre>[att|=val]</pre>
+    <p>
+        Represents an element with the <code>att</code> attribute, its value either being exactly <code>"val"</code> or 
+		beginning with <code>"val"</code> immediately followed by <code>"-"</code> (<code>U+002D</code>). This is primarily 
+		intended to allow language subcode matches (e.g., the <code>hreflang</code> attribute on the <code>a</code> 
+		element in HTML) as described in RFC 3066 ([<a href="http://www.ietf.org/rfc/rfc3066.txt">RFC3066</a>]) or its 
+		successor. For <code>lang</code> (or <code>xml:lang</code>) language subcode matching, please see the 
+		<code>:lang</code> pseudo-class. 
+    </p>
+
+<h4>CSS3 Attribute Selectors</h4>
+
+<pre>[att*=val]</pre>
+<p>
+  Match element whose "att" attribute value contains the substring "val".
+</p>
+<pre>E[foo^="bar"]</pre> 
+<p>
+  Match element whose "att" attribute value begins  with the string "val".
+</p>
+<pre>E[att$="val"]</pre> 
+<p>
+  Match element whose "att" attribute value ends  with the string "val" .
+</p>
+
+<h4>Property Matching</h4>
+
+<p>
+   Dynamic object properties can be of any value and reflect the object's state. Matching 
+   attribute selectors against properties is nonstandard. This is what jQuery does most of the time.
+</p>
+<h3>
+jQuery Attribute (Property) Selector Syntax Extensions
+</h3>
+
+jQuery defines additional nonstandard extensions, for example, an incomplete list of just two:
+<dl>
+<dt><code>[att!=val] </code>
+</dt>
+<dd>
+  Represents an element whose property att is either undefined or is not val.
+</dd>
+<dt>
+<code>:animated</code>
+</dt>
+<dd>
+  Select all elements that are in the progress of an animation at the time the selector is run.
+</dd>
+</dl>
+
+<p>
+   The <code>:animated</code> selector is inherently coupled to jQuery.  
+</p>   
+
+<p>
+   Other javascript libraries copy some of the jQuery selectors but implement them differently. 
+   Rather than trying to match against property values, the other libraries match against 
+   attribute values in more cases, though still often matching properties in MSIE.
+</p>
+
+<h4>What Does jQuery Do?</h4>
+<p>
+    jQuery does what the <a href="http://www.tuttoaster.com/some-good-and-advanced-jquery-techniques/"
+  	>blog article</a> says it does. Well, in a few browsers, and depending on the rendering mode and 
+  	the CSS that has been applied to the elements. What jQuery does varies widely across browsers. 
+</p>
+
+<h4>
+Bare Words Attribute Values Test
+</h4>
+
+<p>
+   jQuery <dfn>bare words</dfn> attribute selector performs property matching in 
+   the examples in the <a href="http://www.tuttoaster.com/some-good-and-advanced-jquery-techniques/"
+  >article</a>. 
+</p>
+<pre>
+'img[width=600]'
+</pre>
+<dl>
+<dt>Opera 10.5</dt>
+<dd><pre>
+    imageOne
+    imageTwo
+</pre>
+</dd>
+<dt>
+Firefox 3.6, Firefox 2, Safari 4, Chrome 4:
+</dt>
+<dd>
+<pre>
+    imageOne
+    imageTwo
+    imageThree
+    imageFour
+</pre>
+</dd>
+<dt>
+IE6 and IE7 (standards mode), IE8 (EmulateIE7)
+</dt>
+<dd>
+    (empty result)
+</dd>
+<dt>
+IE6 and IE7 (quirks mode), IE8 and IE9 (either mode)
+</dt>
+<dd>
+<pre>
+    imageTwo
+    imageThree
+    imageFour
+</pre>
+</dd>
+</dl>
+<h4>Cross Browser Results Analysis</h4>
+<p>
+   The results above show inconsistent results from recent 
+   versions of browsers that jQuery supports.
+</p>
+<p>
+	In fact, in IE8 alone, jQuery can result in three possible different results. 
+	This is because in IE8, NodeSelector is unavailable in both quirks mode and IE7 mode. 
+	Property values can vary between those modes. This leaves the possibility for jQuery 
+	attribute selectors to match attributes, or one of two different property values, 
+	depending on if the document is in quirks mode.
+</p>
+<p>
+	Had the selector's attribute value been a string (surrounded by quotation marks), as 
+	<code>img[width='600']</code>, then following the Selectors API, it must match all <code>img</code> 
+	elements whose width content attribute is exactly the value <code>"600"</code>. 
+</p>	 
+<p>
+   However, because jQuery uses <code>querySelectorAll</code> first (NFD), 
+   <code>img[width='600']</code> would match <code>img</code> with attribute 
+   "600" and for browsers that lack <code>querySelectorAll</code>, will match 
+   <code>img</code> elements whose <code>width</code> <em>property</em> is <code>600</code>.
+</p>
+
+<h4>
+	jQuery Property Matching Example
+</h4>
+<pre>
+$("body[ownerDocument]", "html").length
+</pre>
+<p>
+All tested browsers:
+</p>
+<pre>
+    1
+</pre>
+<pre>
+$("html body[ownerDocument]").length
+</pre>
+<dl>
+<dt>
+Safari 4, Firefox 3.6, IE8, 9, Chrome 4, Opera 10
+</dt>
+<dd><code>0</code></dd>
+<dt>
+Firefox 2, IE6 and 7 (either mode), IE8 and 9 (quirks mode)
+</dt>
+<dd><code>
+1
+</code>
+</dd>
+</dl>
+
+<p>
+The example shows:
+</p>
+<ol>
+ <li> jQuery performs property matching of ownerDocument in some browsers
+ </li>
+ <li> when a context parameter is passed,  the property matching occurs in all tested browsers
+ </li>
+</ol>
+
+<p>
+   It is a bad idea to try to read <code>ownerDocument</code> this way, however 
+   some might actually think it is a good idea to try to read an input's <code>checked</code> property. 
+   &mdash; a classic mistake, and one which unfortunately made it into the core of jQuery.
+</p>
+
+<h4 id="attributes-vs-properties">
+Attributes vs Properties
+</h4>
+<p>
+   The basic difference between attributes and properties are that attributes are 
+   string values that the browser parses from the HTML source code and properties 
+   reflect an object's state with any value type (number, boolean, function, etc).
+</p>
+
+<p>
+   jQuery has never handled attributes properly<a href="#references-jquery">[1][2][3][4][5][6]</a>. 
+   jQuery is designed in such a way that does not clearly distinguish attributes from properties. 
+   The most common versions of Internet Explorer have this same problem. 
+</p>
+
+<h4>
+jQuery/Sizzle <code>ATTR</code> Matcher
+</h4>
+<p>
+   The source code for Sizzle shows how object properties, before attributes, are matched.
+</p>
+
+<pre>
+ATTR: function(elem, match){
+    var name = match[1],
+    result = Expr.attrHandle[ name ] ?
+        Expr.attrHandle[ name ]( elem ) :
+        elem[ name ] != null ?
+         elem[ name ] :
+         elem.getAttribute( name ),
+        value = result + "",
+        type = match[2],
+        check = match[4];
+</pre>
+<p>
+The line:
+</p>
+<pre>
+elem[ name ] != null ? elem[ name ]
+</pre>
+<p>
+   - checks to see if the element's property is either <code>null</code> or <code>undefined</code>. 
+   If that is the case, getAttribute is used as a fallback.
+</p>
+
+<p>
+   It would seem to make more sense to use <code>elem.getAttribute</code> instead, 
+   however, that would still leave behind problems with MSIE's completely broken 
+   implementation of attributes, prior to IE8. 
+</p>
+
+<p>
+   Using <code>getAttribute(att, 2)</code> for IE cannot be used safely because IE throws 
+   errors in some cases with that and returns wrong values, such as strange numbers for 
+   values of boolean attributes (<a title="MSDN: getAttribute()"
+   href="http://msdn.microsoft.com/en-us/library/ms536429%28VS.85%29.aspx#ctl00_WikiViewer1_wikiItems">MSDN</a>).
+</p>
+<pre>
+input.getAttribute("disabled", 2); // Result number 0 in IE.
+</pre>
+
+<p>
+   Properties as attributes appears to have been a fundamental design oversight in 
+   early jQuery. Changing the method to use a strategy to resolve attribute values 
+   would change behavior with programs that use of jQuery, jQuery UI and any and all 
+   plugin dependencies.  
+</p>
+
+<p>
+   So while changing ATTR to match attributes would make sense, it would not be practically 
+   possible in IE (due to bugs in IE). IE bugs aside, changes to <code>ATTR</code> would result in a 
+   substantial change propagation to any and all dependencies. The problem cannot easily be fixed, 
+   as jQuery is a public API and public APIs are forever. 
+</p>
+
+<p>
+   jQuery applies attribute selectors to match object properties, but where <code>querySelectorAll</code> 
+   is implemented, and an error is not thrown, jQuery resolves attributes.
+</p>
+
+<p>
+	Attribute values and properties are completely different things. Performing attribute selector 
+	matching by testing elements' property values, as jQuery does, is a significant deviation 
+	from the way standard attribute selectors work.
+</p>
+
+<h3>
+CSS 2.1 Identifier: Type, ID, and Class Selectors
+</h3>
+
+<p>
+The CSS production for Identifier is used not only for attributes, but also Type (element name), ID, and class selectors.
+</p>
+
+<h4>Type Selector</h4>
+<p>
+A type selector matches the name of a document language element type. For example, <code>"html"</code>, would match the 
+<code>HTML</code> element in an html document. <code>"2"</code> would result in 
+an error because it is not an identifier. However, <code>jQuery("2")</code> will use its native-first dual approach, which throws the expected error, 
+which it then catches, and then falls back to <code>oldSizzle</code>.
+</p>
+
+<pre>
+document.querySelectorAll("2"); // Error.
+jQuery("2");// Result of 0 objects matched.
+</pre>
+
+<h4>ID Selector</h4>
+<p>
+The ID selector is <code>"#"</code> followed by an identifier; <code>B&amp;W?</code> is not an 
+identifier and so <code>#B&amp;W?</code> is not a valid ID selector. However in jQuery, the production for 
+identifier is not matched; here again, jQuery will use its native-first dual approach, which throws an error, 
+catches that, falling back to <code>oldSizzle</code>.
+</p>
+<pre>
+document.querySelectorAll("#B&amp;W?"); // Error.
+jQuery("#B&amp;W?"); // Result of 0 objects matched.
+</pre>
+
+<h4>Class Selector</h4>
+<p>
+The Class selector is "#" followed by an identifier.
+</p>
+<pre>
+document.querySelectorAll(".B&amp;W?"); // Error.
+jQuery(".B&amp;W?"); // Result of 0 objects matched.
+</pre>
+
+<p>
+Most libraries have problems with these selectors.
+</p>
+<p>
+Ext-JS documentation uses invalid syntax and misleads the reader by falsely stating:
+</p>
+<blockquote>
+<p>
+The use of <code>@</code> and quotes are optional. For example, <code>div[@foo='bar']</code> 
+is also a valid attribute selector.
+</p>
+</blockquote>
+
+<p>
+   No! The <code>@</code> in an attribute selector is <em>not a valid CSS Selector</em> 
+   Quotes are <em>not</em> optional for CSS selectors. Omitting quotes in Ext (the big one) 
+   may result in an error being thrown, depending on if the attribute value is an 
+   <dfn>Identifier</dfn> and when an error is thrown, the fallback is used. 
+</p>
+<p>
+   The same documentation is used for Sencha, and when and invalid query is passed in Sencha,
+   the result is a javascript error. An XPath attribute selector using <code>[@foo='bar']</code>
+   would cause an error to be thrown in any browser. The difference with Sencha is that error 
+   is not caught; no fallback is provided.
+</p>
+
+<h4>
+Other Libraries: A Peek at YUI, Ext-JS, and "My Library"
+</h4>
+<h5>YUI 2</h5>
+  <p>
+    YUI 2 supports some jQuery extensions, but for other extensions, and even for some standard 
+    CSS selectors, it returns wrong results. For example, <code>":link"</code> and <code>":disabled"</code>, 
+	return every element in the document.
+  </p>
+  <p>
+    YUI 2 supports only <code>U+0020</code> white space in selectors and throws errors on anything 
+	else. Mootools 1.2 has the same problem, throwing an error if the selector contains whitespace it 
+    can't recognize (such as tab). Contrast to what is specified for whitespace in CSS2.
+  </p>	
+
+<h3>What's Next?</h3> 
+<p>
+   Upon learning that the library creates more cross browser problems than it solves, the 
+   next logical step for the library user should be to stop using it, to remove it, and not 
+   to jump blindly to another library. 
+</p>
+<p>
+   The next step for developers realizing that their query library is failing 
+   to live up to what was promised is to learn how to create reusable, forwards-compatible 
+   abstractions that follow standards and work consistently across browsers. 
+</p>
+
+<h4>For Library Users and Management</h4>
+<p>
+   There is no substitute for knowledge (Deming). One who wants to build RIAs must read all 
+   of the pertinent specifications and all of the pertinent browser documentation. 
+   He should have a good foundation of OO principles and methodologies.
+</p>
+
+<p>The following advice is offered to the reader:
+</p>
+<ul>
+    <li> RTM - (ECMA, CSS2.1, Selectors, DOM 2 HTML, HTML4, HTML5, also MDC and MSDN).
+    </li>
+    <li> Test across many browsers, including older browsers, to test degradation paths.
+    </li>
+    <li> Get code reviews 
+    </li>
+    <li> Ask smart questions
+    </li>
+</ul>
+<p>
+   Everyone in the company should be focused on the successful production of a quality product. 
+</p>
+
+<p>
+   If management is making decisions about javascript (libraries or otherwise) and they are 
+   not technically qualified to make technical assessments of quality, then they are effectively 
+   hurting the company and they need to stop doing that.
+</p>
+
+<h4>For Library Authors</h4>
+<p>
+   Reusable abstractions are useful to fulfill software requirements quickly. The concept of 
+   javascript library must evolve beyond the current state.
+</p>
+
+<h5>Independent, Cohesive parts</h5>
+<p>
+The libararies reviewed are highly interdependent. 
+</p>
+<p>
+The javascript programming language allows interface-based design without 
+having to create an actual interface. For example, a method `elementHasClass` is needed, 
+then that method could easily exist independently, and such methods do exist in YUI, for example.
+There should be no need to depend on the concretion of <em>entire</em> YUI core, just that method and 
+whatever it depends upon. 
+</p>
+
+<p>
+   An interface does not need to "change the way you write javascript. That would be the task of an
+   IoC-type framework.
+</p>
+
+<p>
+   An interface does not promote dependence on one
+   Big Thing. An interface should do <em>one</em> thing. 
+</p>
+
+<h5>Fundamentally Broken Abstractions</h5>
+<p>
+   A fundamentally broken abstraction cannot function consistently across browsers
+   in all contexts. What can be done about such problems?
+</p> 
+
+<p>
+   One approach is to try to make the abstraction work in all contexts. 
+   A few extreme examples of that are in the "APE.dom.getOffsetCoords" function I wrote 
+   several years back. Another is David Mark's attribute reading function 
+   <a href="http://www.cinsoft.net/scripts/prop.js"><code>attr</code></a>.
+</p>
+
+<p>   
+   As seen in these examples, modules that have more browser-differences workarounds become 
+   increasingly complex, have more edge cases, and are and much harder for humans to digest. 
+</p>
+
+<p>   
+   To avoid having a linear dependence on any abstraction the object 
+   that is using the abstraction can be <em>configured</em> so that the abstraction that it is 
+   using can be switched to another abstraction with the same interface. 
+</p>
+
+<h4>Speculative Generality</h4>
+<p>
+   An interface that is built for "users" tends to lead to too much 
+   generality, as seen in the popular libraries, burgeoning with fetures, complexity, and bugs.  
+</p>
+
+<p>
+   An interface that addresses differences in browsers should follow standards and use feature testing to derive 
+   strong inferences about the client environment and should limit what it does to the least capable environments.
+</p>
+
+<h4>Code Review</h4>
+<p>
+   Blind acceptance of library code caused the Ajax library problem. Too many awful APIs, too 
+   much misinformation and the result is a catastrophe. 
+</p>
+
+<p>   
+   To avoid the mistakes, libraries will need more peer review, and that starts with you, 
+   reader. The next time you want to evaluate a library, look carefully at the source code. 
+</p>
+
+<p>
+   Technical management (at least in America) thinks that they can get away with 
+   copying what everybody else is doing but they don't realize that this is hurting quality. 
+   Ajax development has become an extreme case of the blind leading the blind.
+</p>
+
+<h3>Focus on Quality</h3>
+<p>
+   Teams that focus on short term costs and "getting things done" sacrifice quality. Sacrificing 
+   quality creates technical debt. Technical debt hurts quality and increases the effort 
+   (and cost) of maintaining the code. 
+</p>
+<p>
+   The most important step that a company can take is to focus on fulfilling its goals with quality 
+   solutions. A company that focuses on quality will, in the long run, reduce the costs of production. 
+</p>
+<p>
+   Quality code comes from knowledgable developers and / or teams. 
+   Developers who learn to value quality will show greater pride of 
+   craftsmanship. This will create a reprocussive 
+   effect of improved quality within the development team and within
+   the company. 
+</p>
+<p>
+   You can <em>not</em> afford to do things wrongly. 
+</p>
+
+<h3>Cross Browser Abstractions - Wrapper with a Fallback</h3>
+<p>
+  What follows is a strategy for developing a consistent interface, 
+  limited by the least common denominator. 
+</p>
+<p>
+   The strategy uses a mixture of standard features, where those are available, and compatible 
+   fallbacks where they are missing or found buggy (by capability tests). 
+</p>
+<p>
+   Although the example of the concept is about Selector queries, the conceptual pattern and 
+   strategy itself is applicable to many situations. 
+</p>
+
+<h4>Filter the Input</h4>
+<p>
+   A query selector that behaves consistently across browsers must verify that all inputs behave 
+   consistently across all known implementations.  
+</p>
+<p>
+   The library can decide which selectors will be unsupported and filter them out.  Some selectors, 
+   such as <code>:visited</code>, are not possible to implement and not very useful anyway. Supporting 
+   attribute selectors for IE is more trouble than it is worth. 
+</p>
+
+<h4>Using NodeSelector</h4>
+
+<p>
+   If the library chooses to use <code>NodeSelector</code>, then it must follow the specification to the letter. 
+   It must not allow any invalid selectors. It must not extend the CSS2 selectors syntax.
+</p>
+
+<h4>Capability Tests</h4>
+
+<p>
+   To determine if the browser provides a sufficient implementation of 
+   <code>document.querySelectorAll</code>, perform capability tests to check for not only 
+   existence of <code>document.querySelectorAll</code>, but known problems with the 
+   supported selectors[<a href="#ref-bugs">13</a>].
+</p>
+<p>
+   For example, a a CSS1-compliant query selector engine could employ a strategy where if the 
+   selector did not match a validity constraint, then an error would be thrown. 
+</p>
+<pre>
+function makeQuery(selector, doc) {
+    if(!isValidSelector(selector)) {
+        throw new InvalidSelectorError(selector);
+    }
+    doc = doc || document;
+    if(IS_QSA_SUPPORTED) { 
+        return doc.querySelectorAll(selector);
+    } else {
+        return makeQueryFallback(selector, doc);
+    }
+}
+</pre>
+
+<p>
+Consistently throwing an error for unsupported selectors avoids the inconsistencies seen with the native-first dual approach.
+</p>
+<p>
+The library function could safely use <code>doc.querySelectorAll</code> as a fallback, so long as 
+the known implementations consistently support all of the selectors that the library 
+supports[<a href="#ref-bugs">12</a>]. And, in case you didn't notice, this strategy 
+will work cross-frame, unlike every other selector engine.  
+</p>
+<pre>
+  &lt;Is input Supported?&gt;
+   |           |
+   Y           N- [Throw Error] -END| 
+   |              
+  &lt;Native QSA Support?&gt;
+   |               |
+   Y -[Use QSA]    N - [Use falback]
+</pre>
+<p>
+This is somewhat similar to the strategy used by Dojo, which documents that some selectors are unsupported.
+</p>
+
+<h4>The Value of Queries</h4>
+<p>
+The selector APIs in the several prominent javascript libraries reviewed are so broken 
+that they obviously cannot be relied on. 
+</p>
+<p>
+The value of selectors that work as specified by the specifications has not been established. 
+</p>
+<p>
+There are several alternatives to using selectors. Anyone, though especially those who are using a broken selectors API, 
+should question how much value the abstraction provides. He should compare that value, positive or negative, to the alternatives.
+</p>
+
+<h4>Drawbacks to Queries</h4>
+<p>
+The program design approach of using DOM traversal to select nodes and then 
+performing an action on one or more of them is usually much less efficient than 
+standard alternatives. 
+</p>
+<p>
+When DOM traversal is performed on page load, it can increase page load time, especially if the 
+action inside the loop triggers a recalc (also commonly called "reflow"). For a large document, 
+this can cause the page to become unresponsive, as seen on the WHATWG HTML5 draft specification 
+"full version" [<a href="#ref-bugs">14</a>]. However even a small delay (200ms) 
+adds to the overall page load time (a critical performance moment). Such performance 
+issues will have a greater performance impact on slower systems, not fast developer systems.  
+</p>
+
+<h4>Query Matching Strategy</h4>
+<p>
+Most usage of queries don't allow for common traversal patterns of finding an ancestor. Such traversal pattern is often 
+needed when using event delegation strategies, where the callback needs to know find an ancestor matching a particular 
+criteria, usually either <code>ID</code>, <code>className</code> or <code>tagName</code>.
+</p>
+<pre>
+var sel = new Selector("ul.panel");
+
+function clickCallback(ev) {
+  var target = DomUtils.getTarget(ev);
+  if(sel.test(target)) {
+    panelListClickHandler(ev);
+  }
+}
+</pre>
+<p>
+To handle this functionality, the <code>Selector.test</code> method could use 
+<code>Element.matchesSelector(txt)</code> (after capability testing, of course). This is implemented 
+in Gecko as <code>Element.mozMatchesSelector</code> and in webkit as <code>Element.webkitMatchesSelector</code>.
+</p>
+
+<p>
+   Since selector traversal and parsing is slower, another alternative would be to support only 
+   simple selectors but without attributes, so limiting to type (element), class, and ID. 
+</p>
+
+<h4>Alternatives</h4>
+<p>
+The "find something, do something" approach has efficient alternatives alternatives. 
+</p>
+<p>
+If the "do something" action is adding an event handler to various nodes, then that can action be replaced by using event delegation. 
+This is done by adding an event listener to a common ancestor.
+</p>
+<p>
+   If the "do something" action is modifying styles, then the script can add a <code>className</code> 
+   token to a common ancestor of 
+   the matched nodes, allowing the browser to apply the cascade to descendant nodes. An example of this is linked from 
+   the design section of the <a href="http://jibbering.com/faq/notes/code-guidelines/#design"
+   >code guidelines</a> for <a href="news://comp.lang.javascript">comp.lang.javascript</a>.
+</p>
+
+<h4>Conclusion</h4>
+<p>
+The current javascript library APIs do not adhere the CSS2 specification for selectors.
+</p>
+<p>
+Library documentation for selectors often does not differentiate between standard selectors or nonstandard extensions. 
+For libraries that use the <abbr title="native-first dual">NFD</abbr> approach, query results vary 
+widely not only between browsers, but even in the same browser, depending on something as trivial as 
+an unquoted attribute value.
+</p>
+<p>
+The native-first dual approach does not normalize browser behavior. 
+Instead, amplifies the differences between browsers that have native support and those that don't. 
+</p>
+
+<p>
+Design problems are not limited to the query engines, but include other parts of the library and extend to their dependencies. 
+Other such design problems seen in libraries include browser detection, fake method overloading, and useless methods 
+that don't do what their name indicates. All at a cost of increased bytes and instability.
+</p>
+
+<p>
+   Any javascript developer who uses jQuery, YUI, Ext-JS, or Sencha either has not read the 
+   source code enough, is not capable of understanding the problems, or has read and understood 
+   the problems but has not appreciated the consequences deeply. The use of any one of these libraries 
+   is a substantially irresponsible and uninformed decision that puts quality and long-term success 
+   of his project at risk.
+</p>
+
+<p>
+   Today's Ajax libraries are interdependent monoliths that promise what is not practically 
+   possible. The problems with javascript libraries can be avoided by favoring simple interface-based 
+   design that avoids browser issues. 
+</p>
+
+<h2>References</h2> 
+<h3 id="sel-normative">Specifications and Drafts</h3>
+<ul>
+  <li>CSS 2
+    <ul>  
+      <li><a href="http://www.w3.org/TR/2008/REC-CSS2-20080411/">overview</a>
+      </li>
+      <li> <a href="http://www.w3.org/TR/CSS2/selector.html">selectors</a>
+      </li>
+      <li> <a href="http://www.w3.org/TR/CSS21/grammar.html#scanner">lexical grammar</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+  <a href="http://www.w3.org/TR/REC-html40/">HTML 4</a>
+  </li>
+  <li><a href="http://whatwg.org/">HTML5</a>
+  <a href="">Selectors Recommendations</a>
+  </li>
+  <li>
+  <a href="http://www.w3.org/TR/DOM-Level-2-HTML/html.html">DOMHTML</a> 
+  </li>
+  <li>
+[<a href="http://www.w3.org/TR/selectors-api/#processing-selectors">SELECT</a>] 
+  </li>
+  <li>
+  [<a href="http://dev.w3.org/2006/webapi/selectors-api-testsuite/002.html">SELTEST</a>]
+  </li>
+  <li>
+  <a href="http://www.w3.org/TR/2009/WD-css3-selectors-20090310/#dynamic-pseudos">SELECTORS 3</a>]  
+  </li>
+</ul>
+  <h3>Other References</h3>
+  <ul>
+  <li>
+  [<a href="http://api.jquery.com/all-selector/">jQuery documentation: The all selector</a>] 
+  </li>
+  <li>
+	<a href="http://api.jquery.com/category/selectors/attribute-selectors/">jQuery documentation: attribute selectors</a> 
+  </li>
+</ul>
+<h4>JQuery Issues and Discussions</h4>
+<ul id="references-jquery">
+  <li>[1]<a href="http://forum.jquery.com/topic/attr-is-still-very-broken-in-1-4a1"
+         >http://forum.jquery.com/topic/attr-is-still-very-broken-in-1-4a1</a>
+  </li>
+  <li>[2]<a href="http://groups.google.com/group/comp.lang.javascript/browse_thread/thread/d9dcd1584dddbf04/257d12eea69a1a37#msg_5c408465d003bae6"
+  >JSLint Reports on last 2 Production Versions of jQuery (comments by Matt Kruse)</a>
+  </li>
+  <li>[3]<a href="http://dev.jquery.com/ticket/6139">http://dev.jquery.com/ticket/6139</a>
+  </li>
+  <li>[4]<a href="http://groups.google.com/group/comp.lang.javascript/browse_thread/thread/c4cc46106a2ba203"
+  >jQuery Attribute Summit--Latest Coverage</a>
+  </li>
+  <li>
+[5] <a href="http://forum.jquery.com/topic/ticket-1591-ie-table-attr-non-existent-invalid-argument-error"
+>http://forum.jquery.com/topic/ticket-1591-ie-table-attr-non-existent-invalid-argument-error</a>
+  </li>
+  <li>
+[6] <a href="http://video.google.com/videoplay?docid=-474821803269194441"
+>http://video.google.com/videoplay?docid=-474821803269194441</a>
+  </li>
+  <li> 
+[7] "<a href="http://newsgroups.derkeiler.com/Archive/Comp/comp.lang.javascript/2007-11/msg00004.html"
+>Javascript Library</a>", comp.lang.javascript.
+  </li>
+  <li>[8]
+ "<a href="http://groups.google.com/group/sizzlejs/browse_thread/thread/6790c8c6741453dd"
+>Sizzle JS - Standards Edition</a>", sizzlejs Google Group.
+  </li>
+</ul>
+
+<h4>Other Javascript Library Discussions</h4>
+<ul>
+  <li>
+[8]<a href="http://developer.yahoo.com/yui/selector/">http://developer.yahoo.com/yui/selector/</a>
+  </li>
+  <li>
+[9] <a href="http://developer.yahoo.com/yui/examples/selector/query.htmlf"
+>http://developer.yahoo.com/yui/examples/selector/query.html</a>
+  </li>
+  <li>
+[10] <a href="http://yui.yahooapis.com/combo?3.1.1/build/dom/dom.js"
+>http://yui.yahooapis.com/combo?3.1.1/build/dom/dom.js</a>
+  </li>
+  <li>
+[11] <a href="http://groups.google.com/group/comp.lang.javascript/browse_thread/thread/ab729e7cd6ee78f6"
+>Sencha Touch--Support 2 browsers in just 228K!</a>
+  </li>
+</ul>
+
+<h4 id="ref-bugs">NodeSelector Bugs and Discussions</h4> 
+<ul>
+  <li>
+[12] <a href="http://groups.google.vu/group/comp.lang.javascript/browse_thread/thread/7ee2e996c3fe952b/d47aaa56327b8c23"
+>QSA - Buggy in a lot of Browsers?</a>
+  </li>
+  <li>
+[13] <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=495217"
+>Bug 9650: Firefox 3.5 querySelectorAll considers hidden input elements when using the :enabled and :disabled pseudo-class</a>
+  </li>
+  <li> 
+[14] <a href="http://lists.w3.org/Archives/Public/public-html-bugzilla/2010May/0049.html"
+>http://lists.w3.org/Archives/Public/public-html-bugzilla/2010May/0049.html</a>
+  </li>
+  <li>
+[15] <a href="http://www.w3.org/Bugs/Public/show_bug.cgi?id=9650"
+>http://www.w3.org/Bugs/Public/show_bug.cgi?id=9650</a>
+  </li>
+</ul>
+
+<h3 id="ref-test">Tests</h3>
+<ul>
+<li><a href="./test/blog/selectors/ext.html">Ext</a></li>
+<li><a href="./test/blog/selectors/sencha.html">Sencha</a></li>
+<li><a href="./test/blog/selectors/yui2.html">YUI 2</a></li>
+<li><a href="./test/blog/selectors/yui3.html">YUI 3</a></li>
+<li><a href="./test/blog/selectors/ex.html">jQuery</a></li>
+<li><a href="./test/blog/selectors/exq.html">jQuery (quirks mode)</a></li>
+<li><a href="./test/blog/selectors/link.html">jQuery (:link test)</a></li>
+</ul>
+
+                    </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  12:15 AM in 
+            <a href="/?category=/JavaScript/" title="/JavaScript/"
+            >JavaScript</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines" title="Responses on &quot;JavaScript Query Engines&quot;">
+            		<span></span>Responses (9)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: JavaScript-Query-Engines -->
+
+                
+         
+        <!-- START: Permalink item -->
+        
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+            
+                                    <div class="comment">
+                <a name="response-1"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-1">Comment</a>:</strong> <span class="author"><a href="http://www.iport.it">Diego Perini</a></span> at Thu, 9 Sep 7:53 AM
+                <div class="post">Garrett,<br />really great and in-depth writing on the subject.<br /><br />Not only you wrote the best article about the state of selector engines in libraries but you also pointed out the technical aspects of the problems with examples, explained current misinterpreting of specifications and offered indications/solutions on how to better approach these problems.<br /><br />Hope libraries authors will pick up your heads-up.<br /><br />Again, my compliments for the article.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-2"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-2">Comment</a>:</strong> <span class="author"><a href="http://subtlegradient.com">Thomas Aylott</a></span> at Thu, 9 Sep 1:49 PM
+                <div class="post">TLDR :P<br /><br />j/k<br /><br />I'll have to set aside an afternoon to read this epic tome. Though, I might need to take a nap halfway through.<br /><br />Any plan to release it in volumes? Maybe breaking it up into chapters would help.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-3"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-3">Comment</a>:</strong> <span class="author"><a href="http://dean.edwards.name/">Dean Edwards</a></span> at Thu, 9 Sep 3:11 PM
+                <div class="post">I'd just like to point out that base2 is another library that does not suffer these problems. Diego and I have been competing recently to produce the most accurate selector engine. :)</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-4"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-4">Comment</a>:</strong> <span class="author"><a href="http://Subtlegradient.com">Thomas Aylott</a></span> at Fri, 10 Sep 9:34 AM
+                <div class="post">When I was doing some research into all the most used js selector engines I found that very few do any of their own testing and that the few tests they do write aren't covering enough.<br /><br />That is why we decided to write our own implementation agnostic selector engine test suite. The SlickSpec http://mootools.net/slickspec/SlickSpec/<br /><br />MooTools brought the world the SlickSpeed selector comparison tool which helped engines compete on speed, and now we bring you the SlickSpec to help engines compete on accuracy. <br /><br />The SlickSpec combines all the (non-broken) tests from all engines test frameworks and quite a few more we cooked up. It runs the tests against any selector implementation you care to throw at it. It is not limited to only a small subset of the selectors you "should" use, it tests custom selectors and syntax extensions too.<br /><br />It runs the test suite in all document types: strict, quirks, semi-standard, XML, XHTML as XML, Ajax XML DOM, SVG, iframe document, dom fragment, orphaned tree segment and maybe more, I forget.<br /><br />We also forked MooTools' Selectors.js and made major changes to it. We created a standalone CSS Selector Parser that has it's own extensive unit tests. We now support XML documents, orphaned trees and all that jazz.<br /><br />Slick.js will be released alongside MooTools 1.3 very soon.<br /><br />The new era of engines competing on accuracy has begun.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-5"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-5">Comment</a>:</strong> <span class="author"><a href="http://www.cinsoft.net">David Mark</a></span> at Fri, 10 Sep 2:55 PM
+                <div class="post">I'd like to point out that My Library suffers from less such problems (though I know it isn't perfect).  The more egregious missteps (e.g. properties vs. attributes) are certainly avoided.  And it doesn't sniff browsers either.  ;)<br /><br />http://www.cinsoft.net/slickspeed.html<br /><br />With regard to the "major" libraries, it's quite a horror show; isn't it?<br /><br />Regardless, as I've always said, CSS selector queries are a complete waste of time.  The last thing you want to do is to dump another layer of (unreliable) abstraction on top of the already complex task of cross-browser scripting.  They don't save time or money; though they do create jobs for incompetent developers.  :(</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-6"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-6">Comment</a>:</strong> <span class="author"><a href="http://www.cinsoft.net">David Mark</a></span> at Fri, 10 Sep 3:01 PM
+                <div class="post">At a glance, you've got a couple of typos.  "Depening" and the name test comparison appears to be mistyped (something about IE8 matching a name attribute case sensitively).<br /><br />And I don't see any "peek" at My Library. (?)  As mentioned, the query engine is not perfect (and I doubt I'll ever bother to make it perfect).  Though as I've been pointing out for some time, it beats the hell out of jQuery (and the rest of the "majors") in every way imaginable (and not just for queries).  :)</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-7"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-7">Comment</a>:</strong> <span class="author"><a href="http://dhtmlkitchen.comcom/">Garrett</a></span> at Sat, 11 Sep 2:08 PM
+                <div class="post">@Thomas, trimming/editing may be a good idea. <br /><br />I've gotten a ton of helpful feedback from Diego and JDD (literally several pages of emails), and I'm working on incorporating the added suggestions having trouble updating the entry with changes. Seems to be that that entry is pushing up against VARCHAR limit of 65,535 bytes! <br /><br />http://dev.mysql.com/doc/refman/5.1/en/char.html<br /><br />Omitting some end tags which are optional in HTML 4 caused my XHTML site to not validate, and I just don't have enough room to add those closing LI tags. There is still gibberish and spelling errors and the explanations aren't great. It's just too damned long, I know.<br /><br />Agreed that library selector engines' test coverage and even the official w3c selectors API test [SELTEST] coverage is inadequate. Thanks to its respective authors, but the official test needs to be expanded to cover each section of the selectors API as it pertains to HTML, including various flavors you mention, and possibly SVG.<br /><br />A JS selectors API interface that does not use NFD can safely omit features of the Selectors API that would be awkward or provide little value. Some things are just impossible to match (:visited, for example) and other things are so troublesome that the added complexity isn't very well justified by the functionality (attribute selectors).<br /><br />CSS1 Simple selector functionality could be somewhat beneficial because it can be used with the "Query Matching Strategy" mentioned in the article. This can be super useful for delegation strategies, such as to answer questions, e.g. "Is click event inside panel?" and the current Selectors API doesn't provide for this functionality. <br /><br />A CSS1 simple selector parser can be implemented in very little code. The matching for the selector parser can be set to test ID, tagName, and className. That doesn't provide for attribute matching but it avoids the problem with dealing with IE attribute problems.<br /><br />Though &lt;code&gt;matchesSelector&lt;/code&gt; could be used, it is more awkward and not as efficient as creating a and saving a Selector object which a hand-rolled fallback can mimic.<br /><br />http://www.mail-archive.com/public-webapps@w3.org/msg05467.html<br /><br />Since matchesSelector isn't implemented, one could use &lt;code&gt;mozMatchesSelector&lt;/code&gt; and &lt;code&gt;webkitMatchesSelector&lt;/code&gt; and that requires yet more feature tests to determine which method name to use, so...<br /><pre><br />if(el &amp;&amp; el[SELECTOR_MATCH_METHOD] &amp;&amp; el[SELECTOR_MATCH_METHOD](str)) {<br />// ...<br />}<br /></pre><br /><br />Compared to what was proposed years ago:<br /><pre><br />if(mySelector.test(el)) {<br />// evaluates to false if el is not an element.<br /></pre><br /><br />David Anderson argued for this feature back in 2006 and some of those ideas have made it into Diego's selector API (and possibly Dean's though I've not looked at that yet).</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-8"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-8">Comment</a>:</strong> <span class="author"><a href="http://www.iport.it">Diego Perini</a></span> at Mon, 13 Sep 7:57 AM
+                <div class="post">Dean &amp; David,<br />maybe non cited libraries do not have these problems,<br />you should appreciate not being listed in bug reports !<br />;-)</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-9"></a>
+                            <strong><a href="/?category=/JavaScript/&amp;date=2010/09/09/&amp;entry=JavaScript-Query-Engines#response-9">Comment</a>:</strong> <span class="author"><a href="http://www.cinsoft.net/">David Mark</a></span> at Wed, 15 Sep 12:57 AM
+                <div class="post">@Diego<br /><br />As mentioned, I know My Library's query module has at least some of these issues (just far fewer than scripts like jQuery).  Bug reports are always welcome as they may cover problems I don't know about.  :)</div>
+                        </div>
+                                
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>
+<div id="column">
+	 <div id="links">
+
+    <div id="blojsom">
+        <p><a href="http://blojsom.sf.net" 
+        	title="Blojsom project home page"><img src="./resources/default/asual-poweredby.jpg" alt="Powered by blojsom" /></a></p>
+    </div>
+</div>
+</div>
+		 <div id="logo"><a href='/' title="DHTML Kitchen"
+		><img src='./res/img/cuttingboard.png' alt="DHTML Kitchen"
+	/></a>
+	</div> 
+	<div class="AnimTree" id='contentScripts'>
+		<h3 id='products'>&nbsp;</h3>
+		<h4 class="nav-header">Tags</h4>
+		
+
+
+<ul>
+			<li><a href="/?tq=APE">APE</a>
+		</li>
+			<li><a href="/?tq=Browsers">Browsers</a>
+		</li>
+			<li><a href="/?tq=CSS">CSS</a>
+		</li>
+			<li><a href="/?tq=Design Patterns">Design Patterns</a>
+		</li>
+			<li><a href="/?tq=Google">Google</a>
+		</li>
+			<li><a href="/?tq=JavaScript">JavaScript</a>
+		</li>
+			<li><a href="/?tq=Testing">Testing</a>
+		</li>
+			<li><a href="/?tq=Threads">Threads</a>
+		</li>
+			<li><a href="/?tq=Widget">Widget</a>
+		</li>
+	</ul>
+<h4 class="nav-header">Archived Scripts</h4>
+		<div class="button" id="animtree"
+			title='Animated Menu Tree used for this site'
+			><span class="buttonlabel" onclick='toggleMenu(this)'
+				  onmouseover='buttonOver(this)'
+				  onmouseout='buttonOff(this)' 
+				><img src="./res/img/bul_d.gif" alt="*" />AnimTree</span>
+		</div>
+		<div class="menu" id="animtreeMenu">
+			<a class='menuNode' href='/scripts/animtree/index.jsp'>AnimTree Home</a><a class='menuNode' href='/scripts/animtree/demo/index.jsp'>Demos</a><a class='menuNode' href='/scripts/animtree/dl/index.jsp'>Download</a><div class="button menuNode" id="AnimTreeTutorials"
+	title='Dynamic tab pane navigation with cookie persistence used on this site'>
+	<span class="buttonlabel" onclick='toggleMenu(this)'
+		  onmouseover='buttonOver(this)'
+		  onmouseout='buttonOff(this)' 
+		  	style='font-size: smaller'
+		><img src="./res/img/bul_d.gif" alt="" width="13" height="13" />Tutorial</span>
+</div>
+<div class="menu menuNode" style='height: auto;' id="AnimTreeTutorialsMenu"><!-- XXX ie6 -->
+	<a class='menuNode' href='/scripts/animtree/tutorial/index.jsp' title='AnimTree Tutorial Overview'>0 - Overview</a><a class='menuNode' href='/scripts/animtree/tutorial/ingredients.jsp' title='The Ingredients: Putting the HTML, CSS, and JavaScript into the HTML'>1 - Ingredients</a><a class='menuNode' href='/scripts/animtree/tutorial/html.jsp' title='The HTML structure that the demos use'>2 - HTML Structure</a><a class='menuNode' href='/scripts/animtree/tutorial/events.jsp' title='onclick=&quot;toggleMenu(this)&quot;  onmouseover=&quot;buttonOver(this)&quot;  onmouseout=&quot;buttonOff(this)&quot;'>3 - Event Handlers</a><a class='menuNode' href='/scripts/animtree/tutorial/css.jsp' title='Modifying the CSS'>4 - Modifying the CSS</a><a class='menuNode' href='/scripts/animtree/tutorial/treeParams.jsp' title='Modifying the TreeParams'>5 - TreeParams</a><a class='menuNode' href='/scripts/animtree/tutorial/persistentTree.jsp' title='PersistentTree Tutorial'>6 - PersistentTree</a><a class='menuNode' href='/scripts/animtree/tutorial/api.jsp' title='Function Reference Page'>7 - Function Reference</a><a class='menuNode last' href='/scripts/animtree/tutorial/faq.jsp' title='Frequently Asked Questions'>8 - FAQ</a></div><a class='menuNode last' href='/scripts/animtree/buy/index.jsp'>Buy AnimTree</a></div>
+	
+	
+		<div class="button" id="tabs"
+			title='Dynamic tab pane navigation with cookie persistence used on this site'
+			><span class="buttonlabel" onclick='toggleMenu(this)'
+				  onmouseover='buttonOver(this)'
+				  onmouseout='buttonOff(this)' 
+				><img src="./res/img/bul_d.gif" alt="*" />Tabs</span>
+		</div>
+		<div class="menu" id="tabsMenu">
+			<a class='menuNode' href='/scripts/tabs/index.jsp'>Tabs Home</a><a class='menuNode' href='/scripts/tabs/demo/index.jsp'>Demos</a><a class='menuNode' href='/scripts/tabs/dl/index.jsp'>Download</a><div class="button menuNode" id="TabsTutorials"
+	title='Dynamic tab pane navigation with cookie persistence used on this site'
+	><span class="buttonlabel" onclick='toggleMenu(this)'
+		  onmouseover='buttonOver(this)'
+		  onmouseout='buttonOff(this)' 
+		  	style='font-size: smaller'
+		><img src="./res/img/bul_d.gif" alt="" width="13" height="13"/>Tutorial</span>
+</div>
+<div class="menu menuNode" style='height: auto;' id="TabsTutorialsMenu"><!-- XXX ie6 -->
+	<a class='menuNode' href='/scripts/tabs/tutorial/index.jsp' title='Tabs Tutorial Home'>0 - Overview</a><a class='menuNode' href='/scripts/tabs/tutorial/ingredients.jsp' title='The ingredients &mdash; HTML, CSS, and JavaScript'>1 - Ingredients</a><a class='menuNode' href='/scripts/tabs/tutorial/html.jsp' title='HTML Structure- explains the structure that the demos use'>2 - HTML Structure</a><a class='menuNode' href='/scripts/tabs/tutorial/images.jsp' title='Using Images for tabs'>3 - Using Images</a><a class='menuNode' href='/scripts/tabs/tutorial/tabparams.jsp' title='TabParams - control the behavior of the tabs'>4 - TabParams</a><a class='menuNode' href='/scripts/tabs/tutorial/css.jsp' title='Modifying the CSS'>6 - CSS - How To Modify</a><a class='menuNode' href='/scripts/tabs/tutorial/keyevents.jsp' title='Using Keyboard Events to trigger tabs'>5 - Keyboard Events</a><a class='menuNode' href='/scripts/tabs/tutorial/navigation.jsp' title='Tab navigation: Using hash marks in the location; calling switchTabs'>7 - Tab Navigation</a><a class='menuNode' href='/scripts/tabs/tutorial/api.jsp' title='TabSystem API Reference'>8 - API Reference</a><a class='menuNode last' href='/scripts/tabs/tutorial/faq.jsp' title='Frequently Asked Questions'>9 - FAQ</a></div><a class='menuNode last' href='/scripts/tabs/buy/index.jsp'>Buy Tabs</a></div>
+	
+	
+		<div class="button" id="glidemenus"
+			title='Drop down or fly out style menu'
+			><span class="buttonlabel" onclick='toggleMenu(this)'
+				  onmouseover='buttonOver(this)'
+				  onmouseout='buttonOff(this)' 
+				><img src="./res/img/bul_d.gif" alt="*" />GlideMenus</span>
+		</div>
+		<div class="menu" id="glidemenusMenu">
+			<a class='menuNode' href='/scripts/glidemenus/index.jsp'>GlideMenus Home</a><a class='menuNode' href='/scripts/glidemenus/demo/index.jsp'>Demos</a><a class='menuNode' href='/scripts/glidemenus/dl/index.jsp'>Download</a><div class="button menuNode" id="GlideMenusTutorials"
+	title='Animated Drop down, flyout style menus that meet section 508 and w3c standards.'>
+	<span class="buttonlabel" onclick='toggleMenu(this)'
+		  onmouseover='buttonOver(this)'
+		  onmouseout='buttonOff(this)' 
+		  	style='font-size: smaller'
+		><img src="./res/img/bul_d.gif" alt="" width="13" height="13"/>Tutorial</span>
+</div>
+<div class="menu menuNode" style='height: auto;' id="GlideMenusTutorialsMenu"><!-- XXX ie6 -->
+	<a class='menuNode' href='/scripts/glidemenus/tutorial/index.jsp' title='GlideMenus Tutorial Home'>0 - Overview</a><a class='menuNode' href='/scripts/glidemenus/tutorial/ingredients.jsp' title='The ingredients &mdash; putting the images, scripts, and CSS into the HTML'>1 - Ingredients</a><a class='menuNode' href='/scripts/glidemenus/tutorial/html.jsp' title='The HTML structure that the demos use'>2 - HTML Structure</a><a class='menuNode' href='/scripts/glidemenus/tutorial/events/' title='Show and Hide Menus'>3 - Event Handlers</a><a class='menuNode' href='/scripts/glidemenus/tutorial/css.jsp' title='Modifying the CSS'>4 - CSS - How To Modify</a><a class='menuNode' href='/scripts/glidemenus/tutorial/glideparams.jsp' title='Modifying the GlideParams'>5 - GlideParams</a><a class='menuNode' href='/scripts/glidemenus/tutorial/macns.jsp' title='Compatibility for Macintosh IE and Netscape 4'>6 - Mac IE and NS4</a><a class='menuNode' href='/scripts/glidemenus/tutorial/api.jsp' title='Function Reference Page'>7 - Function Reference</a><a class='menuNode last' href='/scripts/glidemenus/tutorial/faq.jsp' title='Frequently Asked Questions'>8 - FAQ</a></div><a class='menuNode last' href='/scripts/glidemenus/buy/index.jsp'>Buy GlideMenus</a></div>
+
+
+		<div class="button" id="draglib"
+			title="Drag &rsquo;n Drop JavaScripts"
+			><span class="buttonlabel" onclick='toggleMenu(this)'
+				  onmouseover='buttonOver(this)'
+				  onmouseout='buttonOff(this)' 
+				><img src="./res/img/bul_d.gif" alt="*" />DragLib</span>
+		</div>
+
+		<div class='menu' id='draglibMenu'>
+		<a class='menuNode' href='/scripts/draglib/index.jsp' title='What is DragLib?'>DragLib Home</a><a class='menuNode' href='/scripts/draglib/demo/index.jsp'>Demos</a><a class='menuNode' href='/scripts/draglib/dl/index.jsp'>Download</a><div class="button menuNode last" id="draglibModules"
+				title="Modules: Core, Slider, ColorPicker, SortableList"
+				><span class="buttonlabel" onclick='toggleMenu(this)'
+					  onmouseover='buttonOver(this)'
+					  onmouseout='buttonOff(this)' 
+						style='font-size: smaller'
+					><img src="./res/img/bul_d.gif" alt="*" />Modules</span>
+			</div>
+
+			<div class='menu' id='draglibModulesMenu' style='background-image: none;'><!-- XXX ie6 -->
+  
+				<div class="button menuNode" id="draglibCore"
+					title="Drag &rsquo;n Drop JavaScript Component"
+					><span class="buttonlabel" onclick='toggleMenu(this)'
+						  onmouseover='buttonOver(this)'
+						  onmouseout='buttonOff(this)' 
+							style='font-size: smaller'
+						><img src="./res/img/bul_d.gif" alt="*" />Core</span>
+				</div>
+				<div class='menu' id='draglibCoreMenu'><!-- XXX ie6 -->
+					<a class='menuNode' href='/scripts/draglib/core/index.jsp'>Core Module</a><div class="button menuNode" id="DragModuleTutorial"
+	title='Dynamic tab pane navigation with cookie persistence used on this site'>
+	<span class="buttonlabel" onclick='toggleMenu(this)'
+		  onmouseover='buttonOver(this)'
+		  onmouseout='buttonOff(this)' 
+		  	style='font-size: smaller'
+		><img src="./res/img/bul_d.gif" alt="" width="13" height="13" />Tutorial</span>
+</div>
+<div class="menu menuNode" style='height: auto;' id="DragModuleTutorialMenu"><!-- XXX ie6 -->
+	<a class='menuNode' href='/scripts/draglib/core/tutorial/index.jsp' title='DragModule Tutorial Overview'>0 - Overview</a><a class='menuNode' href='/scripts/draglib/core/tutorial/reference.jsp' title='Instance Methods'>1 - Reference</a><a class='menuNode' href='/scripts/draglib/core/tutorial/targets.jsp' title='Adding and Removing Drop Targets'>2 - Drop Targets</a><a class='menuNode last' href='/scripts/draglib/core/tutorial/handles.jsp' title='Creating Handles for DragObjects'>3 - Handles</a></div><a class='menuNode' href='/scripts/draglib/core/dl/'>Download Core</a><a class='menuNode last' href='/scripts/draglib/core/buy/'>Buy DragModule Core</a></div>
+				
+				<div class="button menuNode last" id="DragModuleSlider"
+					title='Dynamic tab pane navigation with cookie persistence used on this site'>
+					<span class="buttonlabel" onclick='toggleMenu(this)'
+						  onmouseover='buttonOver(this)'
+						  onmouseout='buttonOff(this)' 
+							style='font-size: smaller'
+						><img src="./res/img/bul_d.gif" alt="*" />Slider</span>
+				</div>
+				<div class="menu" style='height: auto;background-image: none;' id="DragModuleSliderMenu"><!-- XXX ie6 -->
+					<a class='menuNode' href='/scripts/draglib/slider/index.jsp'>Slider Home</a><div class="button menuNode" id="DragModuleTutorialSlider"
+	title='Dynamic tab pane navigation with cookie persistence used on this site'>
+	<span class="buttonlabel" onclick='toggleMenu(this)'
+		  onmouseover='buttonOver(this)'
+		  onmouseout='buttonOff(this)' 
+		  	style='font-size: smaller'
+		><img src="./res/img/bul_d.gif" alt="" width="13" height="13" />Tutorial</span>
+</div>
+<div class="menu menuNode" style='height: auto;' id="DragModuleTutorialSliderMenu"><!-- XXX ie6 -->
+	<a class='menuNode' href='/scripts/draglib/slider/tutorial/index.jsp' title='Slider Tutorial Overview'>0 - Overview</a><a class='menuNode last' href='/scripts/draglib/slider/tutorial/reference.jsp' title='Instance Methods, Properties, and Event Handlers'>1 - Reference</a></div><a class='menuNode' href='/scripts/draglib/slider/dl/'>Download Slider</a><a class='menuNode last' href='/scripts/draglib/slider/buy/'>Buy Slider</a></div>
+			</div>
+		</div>
+		
+	</div>
+<div id="navbar">
+	<a href='./index.jsp' title='return to the front page'
+	
+	style='visibility: hidden'
+	
+	>Home</a>
+	<a href="/ape/" title="APE JavaScript Library">APE JavaScript Library</a>
+<a title='JavaScript FAQ' href='http://jibbering.com/faq/'>FAQ</a><a title='DHTML Kitchen Customers and Affiliates' href='/g/affiliates/index.jsp'>Affiliates</a><a title='Contact DHTML Kitchen' href='/g/contact/index.jsp'>Contact</a></div>  
+<script type="text/javascript">
+<!-- 
+// This applies to all versions of IE.
+// IE does not properly handle height: 100%. All other browsers do.
+if( document.all && typeof contentScripts != 'undefined') {
+	setTimeout( 
+		"if(contents.offsetHeight < 440)"
+		+		"contents.style.height = '440px';"
+		+	"var adj = -1;"
+		+	"contentScripts.style.height=(contents.offsetHeight+adj)+'px';"
+		, 100);
+}		
+//-->
+</script><div id='footer'>
+	<div id="copyright">&copy; 2000-2007 Garrett Smith</div>
+	<a href='/g/contact/?q=support'>support</a>
+</div>
+</div></body>
+</html>
