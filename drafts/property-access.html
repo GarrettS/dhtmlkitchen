@@ -1,0 +1,242 @@
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/10/05/&entry=How-Property-Access-Works" title="Permalink of &quot;How Property Access Works&quot;"
+        	>How Property Access Works</a>
+        	<small class="date">Friday, 5 October 2007</small>
+        	</h1>
+
+        
+        <div class="post">
+            <p>
+    It's important for web developers to understand how the property 
+    access operators work. 
+    Here's a javascript basic lesson that every web developer should know:
+</p>
+<div style="display: none">
+<h4>Using an XML Reader?</h4>
+<p>The live JavaScript code won't run in your reader, but can be run 
+<a href="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/10/03/&entry=Opera-clobbers-object-prototype-with-FunctionExpression">on the site</a></p>
+</div>
+<pre id="svalue-source">(function(){
+var a = "A String?";
+
+a.isString = true;
+
+return a.isString;
+})();</pre>
+<p>
+    What should be returned? Will it be the value <code>true</code>?
+</p>
+
+<button onclick="assertEquals('svalue');">eval</button><code id="svalue-result"></code>
+<code id="svalue-expected" style="left: -20em; position: absolute;">undefined</code>
+
+<p>
+    What happened to the <code>isString</code> property? 
+</p>
+
+<p>
+    To answer that question, you need to know how the property access operator works.
+</p>
+
+<p>
+    The property access operator converts the <em>value</em> of its left hand operand (if it is a primitive) to an object and gets the property off that object. 
+</p>
+
+<p>
+    Effectively, the above example is equivalent to:
+</p>
+<pre>
+    var a = "A String?";
+    Object(a).isString = true;
+    return Object(a).isString; // undefined
+</pre>
+
+<p>
+    An object is created, assigned the property <code>isString</code> with the value <code>true</code>, and then becomes 
+    inaccessible by program code.
+</p>
+ 
+<p>
+    How about assigning properties to <code>String</code> objects?
+</p>
+
+<pre id="sobject-source">(function(){
+var a = "Axel";
+a = new String(a);
+
+a.foo = 123;
+
+return a.foo;
+})();</pre>
+<button onclick="assertEquals('sobject');">eval</button><code id="sobject-result"></code>
+<code id="sobject-expected" style="left: -20em; position: absolute;">123</code>
+
+<p>
+    Variable <code>a</code> is now a String object. Objects can have properties.
+</p>
+
+<p>
+    The same conversion does not, unfortunately, take place with the <code>instanceof</code> operator.
+</p>
+
+<pre id="instanceof-source">(function(){
+    var a = "Al Gore";
+    return a instanceof String;
+})();</pre><button onclick="assertEquals('instanceof');">eval</button><code id="instanceof-result"></code>
+<code id="instanceof-expected" style="left: -20em; position: absolute;">false</code>
+
+<p>
+    It is still possible to check the <code>constructor</code> property of the object that is created by the 
+    property access operator.
+</p>
+
+<pre id="constructor-source">(function(){
+    var a = "avatar";
+    return a.constructor === String;
+})();</pre><button onclick="assertEquals('constructor');">eval</button><code id="constructor-result"></code>
+<code id="constructor-expected" style="left: -20em; position: absolute;">true</code>
+
+<p>
+    The <code>typeof</code> operator returns "string" for string values and "object" for <code>String</code> objects.
+</p>
+
+<pre id="typeof-source">(function(){
+    var a = "apple";
+    var b = new String("bork");
+    return typeof a + "; " + typeof b;
+})();</pre><button onclick="assertEquals('typeof');">eval</button><code id="typeof-result"></code>
+<code id="typeof-expected" style="left: -20em; position: absolute;">string; object</code>
+
+<p>
+    Primitive values are not objects. Don't let the property access operators fool you.
+</p>
+
+<a title="[MDC] Core JavaScript 1.5 Reference:Global Objects:String" href="/web/20071030054631/http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Reference:Global_Objects:String"
+>Core JavaScript 1.5 Reference:Global Objects:String</a>
+
+<script type="text/javascript" defer="defer">
+/**
+ * compares text-content of expected to actual result by using eval.
+ * if result is incorrect, adds the "incorrect" className.
+ */
+function assertEquals( baseId ) {
+	var src = document.getElementById( baseId + "-source" );
+	var actual = String(eval( src.textContent || src.innerText ));
+
+	var expectedEl = document.getElementById( baseId + "-expected" );
+	var expected = expectedEl.textContent || expectedEl.innerText;
+	var resultEl = document.getElementById( baseId + "-result" );
+	resultEl.innerHTML = "&nbsp;"
+	resultEl.firstChild.data = actual;
+// Because IE does not properly preserve white space, Our test must check the text 
+// w/ nbsp removed.
+	var actualNoNbsp = actual.replace(/(?:\u00a0)|[\s\s]+/g,"");
+	var expectedNoNbsp = expected.replace(/(?:\u00a0)|[\s\s]+/g,"");
+    var actualTrimmed = String.trim( actualNoNbsp );
+    var expectedTrimmed = String.trim( expectedNoNbsp );
+	resultEl.className = (expectedNoNbsp == actualTrimmed ? "correct" : "incorrect");
+}
+String.trim = function( s ) {
+    return s.replace(/^\s+|\s+$/g,"");
+};
+</script>
+            <!-- technorati tags start --><p style="text-align:right;font-size:10px;">Technorati Tags:
+<a href="/web/20071030054631/http://www.technorati.com/tag/JavaScript" rel="tag">JavaScript</a>
+</p><!-- technorati tags end -->
+        </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  3:09 AM in 
+            <a href="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/" title="/JavaScript/"
+            >JavaScript</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/10/05/&entry=How-Property-Access-Works" title="Responses on &quot;How Property Access Works&quot;">
+            		<span></span>Responses (0)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: How-Property-Access-Works -->
+
+                
+         
+        <!-- START: Permalink item -->
+                <!-- Trackback Auto Discovery -->
+<!--
+    <rdf:RDF xmlns:rdf="/web/20071030054631/http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="/web/20071030054631/http://purl.org/dc/elements/1.1/"
+             xmlns:trackback="/web/20071030054631/http://madskills.com/public/xml/rss/module/trackback/">
+        <rdf:Description
+             rdf:about="/web/20071030054631/http://dhtmlkitchen.com/news/default/2007/10/05/How-Property-Access-Works"
+             dc:identifier="/web/20071030054631/http://dhtmlkitchen.com/news/default/2007/10/05/How-Property-Access-Works"
+             dc:title="How Property Access Works"
+             dc:subject="/JavaScript/"
+             dc:description="&lt;p&gt;
+    It&#39;s important for web developers to understand how the property 
+    access operators work. 
+    Here&#39;s a javascript basic lesson that every web developer should know:
+&lt;/p&gt;
+&lt;div style=&quot;display: none&quot;&gt;
+..."
+             dc:creator="Garrett Smith"
+             dc:date="2007-10-05T03:09:22-05:00"
+             trackback:ping="/web/20071030054631/http://dhtmlkitchen.com/news/default/2007/10/05/How-Property-Access-Works?tb=y&amp;entry_id=18" />
+     </rdf:RDF>
+-->
+        
+        <p>
+            <p>&nbsp;</p>
+                        <p>[<a href="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/10/05/&entry=How-Property-Access-Works&tb=y&entry_id=18" title="Trackback">Trackback URL for this entry</a>]</p>
+            
+                                </p>
+
+                <!-- START: Comment form -->
+            <h3>Your comment:</h3>
+            <form id="commentform" method="post" action="/web/20071030054631/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/10/05/&entry=How-Property-Access-Works">
+                <div>
+                    <input type="hidden" name="comment" value="y" />
+                    <input type="hidden" name="entry_id" value="18" />
+                    <input type="hidden" name="permalink" value="How-Property-Access-Works" />
+                                                        </div>  
+                <div class="label"><label for="author">Author (<span class="red">*</span>):</label></div>
+                <div class="input"><input id="author" name="author" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="authorEmail">E-mail:</label></div>
+                <div class="input"><input id="authorEmail" name="authorEmail" type="text" value="" class="fixed" /><span>(not displayed)</span></div>
+
+                <div class="label"><label for="authorURL">URL:</label></div>
+                <div class="input"><input id="authorURL" name="authorURL" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="commentText">Comment (<span class="red">*</span>):</label></div>
+                <div class="input"><textarea name="commentText" id="commentText" rows="7" cols="55" class="fixed"></textarea></div>
+
+                <div class="label">&nbsp;</div>
+                <div class="input"><label for="remember"><input id="remember" name="remember" type="checkbox"  /> Remember me?</label></div>
+
+                <div class="clear"></div>
+                <!--
+                <div>
+					<label for="gatekeeper">
+						<span class="section">$GATEKEEPER_QA.getQuestion()</span> 
+						(<span class="mandatory">*</span>)
+					</label>
+					<input type="text" name="gatekeeper" id="gatekeeper" size="10" maxlength="128"/>
+				</div>
+-->
+                <div class="label">&nbsp;</div>
+                <div class="input"><input type="submit" name="submit" value="Comment" class="button" 
+                /><input type="reset" name="reset" value="Reset" class="button" /></div>
+
+                <div class="clear"></div>
+                
+            </form>
+        <!-- END: Comment form -->
+        
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>

@@ -1,0 +1,334 @@
+
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="/web/20071030114303/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/09/13/&entry=How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array" title="Permalink of &quot;How To Get the Largest and Smallest Valued items in an Array&quot;"
+        	>How To Get the Largest and Smallest Valued items in an Array</a>
+        	<small class="date">Thursday, 13 September 2007</small>
+        	</h1>
+
+        
+        <div class="post">
+            <p>
+	John Resig had the idea of using Math.max to get the highest, valued item in an Array 
+	to get a <a href="/web/20071030114303/http://ejohn.org/blog/fast-javascript-maxmin/">Fast JavaScript max/min</a>: 
+	<code>Math.max.apply( <var>Math</var>, <var>anArray</var> ); </code>
+</p>
+
+<h3>John's Example:</h3>
+<pre>
+Array.max = function( array ){
+    return Math.max.apply( Math, array );
+};
+  
+Array.min = function( array ){
+     return Math.min.apply( Math, array );
+};
+</pre>
+<p>
+
+	<code>Function.prototype.apply</code> accepts a <var>thisArg</var> and an <code>Array</code>.
+</p>
+
+<p>
+<code>Math.max</code>, 
+	and <code>Math.min</code> 
+	methods both accept a variable number of arguments (<a href="/web/20071030114303/http://bclary.com/2004/11/07/#a-15.8.2.11">&#167;15.8.2.11</a>).
+</p>
+
+<p>
+	Let's try John's technique on objects. 
+</p>
+
+<pre>
+var a = {valueOf:function(){return 10;},toString:function(){return "letter a";}};
+var b = {valueOf:function(){return 3;},toString:function(){return "letter b";}};
+var c = {valueOf:function(){return 17;},toString:function(){return "letter c";}};
+
+var abc = [a,b,c];
+
+// Pass null as the thisArg
+alert( Math.max.apply( null, abc ) );
+</pre
+><button onclick="eval(this.previousSibling.firstChild.data)">eval</button>
+<h3>Result?</h3>
+<p>
+Whoops, what happened? We got a number, not a String. 
+</p>
+
+<p>
+This is because <code>Math.max</code> returns a number value, not an Object. (This should not be very surpising).
+</p>
+
+<h3>A Useful Technique?</h3>
+
+<p>
+Not really. If you have a value object that can be reconstructed by it's numeric value, it could work though. Let's try Date.
+</p>
+
+<h3>Last Date</h3>
+<pre>
+var day = 1000 * 60 * 60 * 24;
+var yesterday = new Date(new Date() -day );
+var today = new Date();
+var tomorrow = new Date(new Date() - (-day) );
+
+var days = [yesterday, tomorrow, today];
+
+// pass in null for thisArg. 
+// Only a very poor implementation would choke on a null thisArg.
+var latestDay = Math.max.apply(null, days);
+
+alert("latestDay = " + new Date(latestDay));
+
+</pre
+><button onclick="eval(this.previousSibling.firstChild.data)">eval</button>
+
+<p>
+	So it works for Dates. It can be useful on some cases, but not for all arrays. Doesn't belong on <code>Array.max</code>.
+</p>
+
+
+<h3>String?</h3>
+<p>
+	It won't work with String, either. Again, no surprise here.
+</p>
+
+<pre>
+var a = "apple";
+var b = "banana";
+var c = "cherry"
+
+var abc = [b,c,a];
+
+alert( Math.max.apply( null, abc ) );
+</pre
+><button onclick="eval(this.previousSibling.firstChild.data)">eval</button>
+<p>
+	<code><strong>NaN</strong></code>. Not very useful. Again, no surprise here.
+</p>
+
+<h3>How to sort an Array</h3>
+
+<pre>
+var a = "apple";
+var b = "banana";
+var c = "cherry"
+
+var abc = [b,c,a];
+var len = abc.length;
+var sorted = abc.sort(); 
+alert("max: " + sorted [ len-1 ] ); // last, sorted  item.
+</pre
+><button onclick="eval(this.previousSibling.firstChild.data)">eval</button>
+
+
+
+<h3>How ECMAScript processes <code>Array.sort</code> and <code>Math.max</code></h3>
+
+<p>
+	There's a lot of confusion about ECMAScript. This is due to many things. One reason is the <a href="/web/20071030114303/http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf"
+>official spec</a> is in PDF. Had the spec been 
+	written in HTML, it would be easier for other developers to link to and discuss how confusing it is, in the spec's own terms, hopefully elucidating. 
+</p>
+
+<p>
+	I'm here to talk about the spec 	
+	and I'm linking 
+	<a href="/web/20071030114303/http://bclary.com/2004/11/07/">Bob Clary's HTML Version of ECMA-262</a>.
+</p>
+
+<p>
+	<code>Math.max</code> calls <code>ToNumber</code> which calls 
+	 <code>ToPrimitive</code> on the object, which then calls <code>DefaultValue</code> with the hint <var>Number</var>.
+</p>
+
+<p>
+	<code>Array.sort(<var>comparefn</var>)</code> (<a href="/web/20071030114303/http://dhtmlkitchen.com/a-15.4.4.11">&#167;15.4.4.11</a>) use the SortCompare algorithm.
+	I've abbreviated this here, omitting the behavior that allows Array.sort to be generic (generics deserve another topic).
+</p>
+
+<h4>SortCompare</h4>
+<blockquote>
+<pre>...
+16. Call ToString(x).
+17. Call ToString(y).
+18. If Result(16) &lt; Result(17), return -1.
+19. If Result(16) &gt; Result(17), return 1.
+20. Return +0.
+</pre>
+<strong>NOTE 1</strong>
+<p>
+Because non-existent property values always compare greater than undefined property values, 
+and undefined always compares greater than any other value, undefined property values always sort to the end of the result, 
+followed by non-existent property values.
+</p>
+<strong>NOTE 2</strong>
+<p>
+The sort function is intentionally generic; it does not require that its this value be an Array object. 
+Therefore, it can be transferred to other kinds of objects for use as a method. 
+Whether the sort function can be applied successfully to a host object is implementation-dependent.
+</p>
+</blockquote>
+
+<h3>Array Generics</h3>
+<p>
+	Somewhat oustside the scope of this entry, but it's a useful technique, for example, to call <code>Array.sort( <var>compareFn</var> )</code> 
+	on a NodeList. (this won't work in IE). There are many interesting aspects to Array generics.
+</p>
+
+<h3>ECMAScript ToString internal method</h3>
+<p>
+(not to be confused by <code>Object.prototype.toString</code>)
+</p>
+<p>
+We can see that what happens, when the internal ToString is called, that calls ToPrimitive and ToPrimitive calls DefaultValue. 
+This is the same behavior we saw with Math.max. In fact, anywhere you see ToString in the ECMAScript specification, 
+you can expect the same set of steps, so it's important to understand this thoroughly.
+</p>
+
+<h3>How ECMAScript's <code>DefaultValue</code> Works</h3>
+
+<blockquote>
+<pre>
+<strong><a href="/web/20071030114303/http://bclary.com/2004/11/07/#a-8.6.2.6">&#167;8.6.2.6</a> [[DefaultValue]] (hint)</strong>
+When the [[DefaultValue]] method of O is called with hint String, 
+the following steps are taken:
+1. Call the [[Get]] method of object O with argument "toString".
+2. If Result(1) is not an object, go to step 5.
+3. Call the [[Call]] method of Result(1), 
+with O as the this value and an empty argument list.
+4. If Result(3) is a primitive value, return Result(3).
+5. Call the [[Get]] method of object O with argument "valueOf".
+6. If Result(5) is not an object, go to step 9.
+7. Call the [[Call]] method of Result(5), 
+with O as the this value and an empty argument list.
+8. If Result(7) is a primitive value, return Result(7).
+9. Throw a TypeError exception.
+When the [[DefaultValue]] method of O is called with hint Number, 
+the following steps are taken:
+1. Call the [[Get]] method of object O with argument "valueOf".
+- 29 -
+2. If Result(1) is not an object, go to step 5.
+3. Call the [[Call]] method of Result(1), 
+with O as the this value and an empty argument list.
+4. If Result(3) is a primitive value, return Result(3).
+5. Call the [[Get]] method of object O with argument "toString".
+6. If Result(5) is not an object, go to step 9.
+7. Call the [[Call]] method of Result(5), 
+with O as the this value and an empty argument list.
+8. If Result(7) is a primitive value, return Result(7).
+9. Throw a TypeError exception.
+</pre>
+<p>
+When the <code>[[DefaultValue]]</code> method of <code>O</code> is called with no hint, 
+then it behaves as if the hint were
+Number, unless O is a Date object (see 15.9), 
+in which case it behaves as if the hint were String.
+The above specification of [[DefaultValue]] for native objects can return only primitive values. If a
+host object implements its own [[DefaultValue]] method, it must ensure that its [[DefaultValue]]
+method can return only primitive values.
+</p>
+</blockquote>
+
+
+            <!-- technorati tags start --><p style="text-align:right;font-size:10px;">Technorati Tags:
+<a href="/web/20071030114303/http://www.technorati.com/tag/JavaScript" rel="tag">JavaScript</a>
+<a href="/web/20071030114303/http://www.technorati.com/tag/ECMAScript" rel="tag">ECMAScript</a>
+<a href="/web/20071030114303/http://www.technorati.com/tag/Array" rel="tag">Array</a>
+<a href="/web/20071030114303/http://www.technorati.com/tag/sort" rel="tag">sort</a>
+<a href="/web/20071030114303/http://www.technorati.com/tag/max" rel="tag">max</a>
+<a href="/web/20071030114303/http://www.technorati.com/tag/" rel="tag"></a>
+</p><!-- technorati tags end -->
+        </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  2:33 PM in 
+            <a href="/web/20071030114303/http://dhtmlkitchen.com/?category=/JavaScript/" title="/JavaScript/"
+            >JavaScript</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="/web/20071030114303/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/09/13/&entry=How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array" title="Responses on &quot;How To Get the Largest and Smallest Valued items in an Array&quot;">
+            		<span></span>Responses (0)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array -->
+
+                
+         
+        <!-- START: Permalink item -->
+                <!-- Trackback Auto Discovery -->
+<!--
+    <rdf:RDF xmlns:rdf="/web/20071030114303/http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="/web/20071030114303/http://purl.org/dc/elements/1.1/"
+             xmlns:trackback="/web/20071030114303/http://madskills.com/public/xml/rss/module/trackback/">
+        <rdf:Description
+             rdf:about="/web/20071030114303/http://dhtmlkitchen.com/news/default/2007/09/13/How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array"
+             dc:identifier="/web/20071030114303/http://dhtmlkitchen.com/news/default/2007/09/13/How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array"
+             dc:title="How To Get the Largest and Smallest Valued items in an Array"
+             dc:subject="/JavaScript/"
+             dc:description="&lt;p&gt;
+	John Resig had the idea of using Math.max to get the highest, valued item in an Array 
+	to get a &lt;a href=&quot;/web/20071030114303/http://ejohn.org/blog/fast-javascript-maxmin/&quot;&gt;Fast JavaScript max/min&lt;/a&gt;: 
+	&lt;code&gt;Math.max.apply( &lt;..."
+             dc:creator="Garrett Smith"
+             dc:date="2007-09-13T14:33:20-05:00"
+             trackback:ping="/web/20071030114303/http://dhtmlkitchen.com/news/default/2007/09/13/How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array?tb=y&amp;entry_id=13" />
+     </rdf:RDF>
+-->
+        
+        <p>
+            <p>&nbsp;</p>
+                        <p>[<a href="/web/20071030114303/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/09/13/&entry=How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array&tb=y&entry_id=13" title="Trackback">Trackback URL for this entry</a>]</p>
+            
+                                </p>
+
+                <!-- START: Comment form -->
+            <h3>Your comment:</h3>
+            <form id="commentform" method="post" action="/web/20071030114303/http://dhtmlkitchen.com/?category=/JavaScript/&date=2007/09/13/&entry=How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array">
+                <div>
+                    <input type="hidden" name="comment" value="y" />
+                    <input type="hidden" name="entry_id" value="13" />
+                    <input type="hidden" name="permalink" value="How-To-Get-the-Largest-and-Smallest-Valued-items-in-an-Array" />
+                                                        </div>  
+                <div class="label"><label for="author">Author (<span class="red">*</span>):</label></div>
+                <div class="input"><input id="author" name="author" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="authorEmail">E-mail:</label></div>
+                <div class="input"><input id="authorEmail" name="authorEmail" type="text" value="" class="fixed" /><span>(not displayed)</span></div>
+
+                <div class="label"><label for="authorURL">URL:</label></div>
+                <div class="input"><input id="authorURL" name="authorURL" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="commentText">Comment (<span class="red">*</span>):</label></div>
+                <div class="input"><textarea name="commentText" id="commentText" rows="7" cols="55" class="fixed"></textarea></div>
+
+                <div class="label">&nbsp;</div>
+                <div class="input"><label for="remember"><input id="remember" name="remember" type="checkbox"  /> Remember me?</label></div>
+
+                <div class="clear"></div>
+                <!--
+                <div>
+					<label for="gatekeeper">
+						<span class="section">$GATEKEEPER_QA.getQuestion()</span> 
+						(<span class="mandatory">*</span>)
+					</label>
+					<input type="text" name="gatekeeper" id="gatekeeper" size="10" maxlength="128"/>
+				</div>
+-->
+                <div class="label">&nbsp;</div>
+                <div class="input"><input type="submit" name="submit" value="Comment" class="button" 
+                /><input type="reset" name="reset" value="Reset" class="button" /></div>
+
+                <div class="clear"></div>
+                
+            </form>
+        <!-- END: Comment form -->
+        
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>

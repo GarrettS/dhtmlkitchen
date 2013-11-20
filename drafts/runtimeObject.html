@@ -1,0 +1,368 @@
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/&date=2010/04/11/&entry=Detecting-Global-Pollution-with-the-JScript-RuntimeObject" title="Permalink of &quot;Detecting Global Pollution with the JScript RuntimeObject&quot;"
+        	>Detecting Global Pollution with the JScript RuntimeObject</a>
+        	<small class="date">Sunday, 11 April 2010</small>
+        	</h1>
+
+        
+        <div class="post">
+            <p>
+This article is about debugging with JScript's <code>RuntimeObject</code> 
+(<a href="/web/20101213142317/http://msdn.microsoft.com/en-us/library/ff521039%28VS.85%29.aspx" 
+title="RuntimeObject: MSDN">msdn</a>). All of the examples work in IE 5.5+, though most do not work in any other browser. 
+</p>
+
+<h4>Leaked Global Identifiers</h4>
+<p>
+Say you accidentally created a global property, as in the following:
+</p>
+<pre>
+function playRugby(players) {
+  var items,
+      i;
+      len = items.length; // Global.
+}
+
+function kick() {
+  var x = 10
+      y = 11; // ASI makes y global.
+}
+</pre>
+
+<script type="text/javascript">
+var runJscriptExample = function(id) {
+     var pre = document.getElementById(id),
+        script = document.createElement("script");
+     script.text = pre.innerHTML;
+     script.defer = true;
+     pre.parentNode.appendChild(script);
+   };
+</script>
+
+When <code>playRugby</code> is called, a global property <code>len</code> is created, if it does not already exist,
+and then assigned the value of <code>items.length</code>. Likewise, when <code>kick</code> is called, a global 
+property <code>y</code> is created. 
+<p>
+These globals are unintentional. They break encapsulation and leak implementation details.
+This can result in conflict and awkward dependency issues.
+</p>
+
+<p>
+To detect accidentally created global identifiers, we can loop over the global object using 
+<code>for in</code>. <a href="/web/20101213142317/http://getfirebug.com/">Firebug</a> provides this convenient global inspection under the "DOM" tab.
+</p>
+
+<h4>Everybody's Favorite Browser</h4>
+<p>
+Unfortunately, in IE, the <code>for in</code> won't enumerate any global variables or function declarations, 
+as seen in the example below.
+</p>
+
+<h4>Example Enumerating the Global Object</h4>
+<pre id="runtimeObject1">
+// Property of global variable object.
+var EX1_GLOBAL_VARIABLE = 10;
+
+// Property of global object.
+this.EX1_GLOBAL_PROPERTY = 11;
+
+// Property of global variable object.
+function EX1_GLOBAL_FUNCTION(){}
+
+(function(){
+  var results = [];
+  for(var p in this) {
+    results.push(p);
+  }
+  alert("Leaked:\n" + results.join("\n"));
+})();
+</pre><button onclick="runJscriptExample('runtimeObject1')">run code</button>
+
+<p>
+The result in IE contains a mix of window properties and one the four user-defined properties:
+<code>EX1_GLOBAL_PROPERTY</code>. 
+</p>
+
+<p>
+So what happened to the other three user-defined properties? Why didn't they show up in the <code>for in</code> loop?
+</p>
+
+<p>
+It turns out that enumerating over 
+the global object will enumerate properties 
+assigned to the global object and will not enumerate global variables. 
+</p>
+<p>
+An educated guess as to why global properties are enumerated but global variables are not might be that JScript gives global variables (declared with <code>var</code>), the <code>DontEnum</code> flag. Since the global object is specified as being the global Variable object, this seems like a likely explanation. It would be nonstandard, but it would explain the behavior in IE. <del> Eric Lippert, however, provided a different explanation: The global object and the global variable object are 
+<a href="/web/20101213142317/http://blogs.msdn.com/ericlippert/archive/2005/05/04/414684.aspx"
+>two different objects in IE</a>.
+</del>
+</p>
+<p>According to MS-ES3:
+</p>
+<blockquote>
+<p>
+JScript 5.x variable instantiations creates properties of the global object that have the
+DontEnum attribute.
+</p>
+</blockquote>
+
+<h4>Enumeration Solution: The JScript RuntimeObject</h4>
+<p>
+To enumerate over global properties, use the JScript <code>RuntimeObject</code> method.
+Instead of enumerating over the global object, as you would use in a normal implementation, 
+enumerate over an object returned by the global <code>RuntimeObject</code> method.
+</p>
+
+<pre id="runtimeObject3">
+var GLOBAL_VAR1, 
+    GLOBAL_VAR2, 
+    GLOBAL_VAR3 = 1; 
+    GLOBAL_PROP1 = 12;
+
+function GLOBAL_FUNCTION(){}
+
+if(this.RuntimeObject){
+    void function() {
+        var ro = RuntimeObject(),
+            results = [],
+            prop;
+        for(prop in ro) {
+            results.push(prop);
+        }
+        alert("leaked:\n" + results.join("\n"));
+    }();
+}
+</pre
+><button onclick="runJscriptExample('runtimeObject3')">run code</button>
+
+<h5>IE Result</h5>
+<p>
+The result in IE 8 and below includes (among other things, including <code>window</code>) <code>GLOBAL_FUNCTION</code>, <code>GLOBAL_VAR3</code>, 
+and <code>GLOBAL_PROP1</code>, in that order, as they were evaluated in. 
+Notice that neither <code>GLOBAL_VAR1</code> nor <code>GLOBAL_VAR2</code> were included. 
+It appears that <code>RuntimeObject</code> does not accumulate any variables that were 
+unassigned to. According to Microsoft's documentation, this is not the specified behavior  
+(more on this below).
+</p>
+
+<h4>Microsoft RuntimeObject Documentation</h4>
+
+<p>
+The JScript <code>RuntimeObject</code> is a built-in extension to JScript. JScript 
+defines seven additional built-in global methods: <code>ScriptEngine</code>, 
+<code>ScriptEngineBuildVersion</code>, <code>ScriptEngineMajorVersion</code>, 
+<code>ScriptEngineMinorVersion</code>, <code>CollectGarbage</code>, 
+<code>RuntimeObject</code>, and <code>GetObject</code>. These objects are 
+all native JScript objects, not to be confused with 
+<a href="/web/20101213142317/http://jibbering.com/faq/#hostObject">host objects</a>. 
+</p>
+
+<p>
+    For <code>RuntimeObject</code>, Microsoft JScript Extensions [<a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/&date=2010/04/11/&entry=Detecting-Global-Pollution-with-the-JScript-RuntimeObject#RuntimeObject-references">MS-ES3EX</a>] states:
+</p>
+
+<blockquote cite="http://msdn.microsoft.com/en-us/library/ff521046%28VS.85%29.aspx">
+ The <code>RuntimeObject</code> function is used to search a global object for 
+ properties with names that match a specified pattern. The function 
+ only locates properties of the global object that were explicitly 
+ created by <code>VariableStatement</code> or <code>FunctionDeclaration</code> 
+ functions, or that were implicitly created by appearing as an identifier 
+ on the left side of an assignment operator. The function does not locate 
+ properties that were created by means of explicit property access on the global 
+ object.
+</blockquote>
+
+<p>
+Superficial testing indicates that Microsoft's documentation is wrong. 
+</p>
+
+<p>
+The returned object does <em>not</em> includes all identifiers that were added to the Variable object;
+only those identifiers that have been assigned a value. Whether or not they were created from 
+<code>VariableDeclaration</code>, <code>FunctionDeclaration</code>, or assignment as global properties 
+does not matter. 
+</p>
+
+<h5>Example of Finding Identifiers Created By FunctionBindingList</h5>
+<p>
+All identifiers in a <code>FunctionBindingList</code> of a <code>JScriptFunction</code> 
+will become properties of the containing Variable object, so, for example:
+</p>
+
+<pre id='runtimeObject2'>
+var foo = {}, undef, ro;
+(function(){ function foo.bar, baz(){} })();
+ro = RuntimeObject();
+alert([ro.foo.bar, "undef" in ro].join("\n"));
+</pre
+><button id="example2" onclick="runJscriptExample('runtimeObject2')">run code</button>
+
+IE elerts 
+<pre>
+function foo.bar(){}
+false
+</pre>
+
+<p>
+Browsers other than IE running JScript can be expected to throw 
+<code>SyntaxError</code> upon parsing the <code>FunctionBindingList</code> of 
+<code>JScriptFunction</code> production. This is to be expected, as 
+it is a syntax extension.
+</p>
+
+<h4>Bookmarklet</h4>
+As a bookmarklet:
+<pre>
+javascript:(function() {var ro=RuntimeObject(),r=[],i=0,p;for(p in ro){r[i++]=p;}alert('leaked:\n'+r.join('\n'));})();
+</pre> 
+
+<h5>JScript Syntax Extension</h5>
+<p>
+The earlier example "Finding Identifiers Created By FunctionBindingList" mentioned 
+the JScript Extension <code>JScriptFunction</code>. In case the name is not a dead 
+giveaway, this is a JScript language extension. The production for <code>JScriptFunction</code> is:
+</p>
+<pre>
+JScriptFunction : 
+function FunctionBindingList ( FormalParameterListopt ) { FunctionBody }
+</pre>
+
+<h5>RuntimeObject(filterString): The filterString Parameter</h5>
+<p>
+  The <code>RuntimeObject</code> method accepts an optional filter string to match 
+  identifiers. Unfortunately, <var>filterString</var> is <em>not</em> converted to a regular expression
+  but is used for substring matching with optional <var>leftWild</var> and <var>rightWild</var>, defaulting to <code>*</code>. 
+</p>
+
+<p>
+This means that, for example: <code>filterString = "a*"</code> would match 
+identifiers <code>a</code> and <code>a1</code> but not <code>ba</code>. 
+</p>
+
+<h4>Conclusion</h4>
+<p>
+Documentation bugs and shortcomings aside, the <code>RuntimeObject</code> 
+provides a useful alternative to the problem 
+of enumerating global properties in JScript. An advantage with 
+<code>RuntimeObject</code> is that it only includes user-defined 
+properties, with the exception of the global <code>window</code> property.
+</p>
+
+<p>
+The aforementioned <a title="RuntimeObject Bookmarklet"
+href="javascript:(function() {var ro=RuntimeObject(),r=[],i=0,p;for(p in ro){r[i++]=p;}alert('leaked:\n'+r.join('\n'));})();"
+>bookmarklet</a> provides a convenient way to check a page 
+to see the globals that have been accidentally created (it also shows that this 
+site is not a shining example of keeping the global object clean).
+</p>
+
+<h4>Other Applications for RuntimeObject</h4>
+<h5>Cross Browser Identifier Leak Bookmarklet</h5>
+<p>
+    Writing a cross-browser 
+    <a href="/web/20101213142317/http://perfectionkills.com/detecting-global-variable-leaks/">identifier leak detector</a> 
+    is the next logical step to an IE-only identifier leak detector. 
+</p>
+
+<h5>Automated Identifier Leak Detection</h5>
+<p>
+  Checking for accidental global identifiers should be automated. 
+</p>
+<p>
+  The <a href="/web/20101213142317/http://developer.yahoo.com/yui/yuitest/"
+  >YUI Test</a> unit test framework provides hooks for <code>TEST_CASE_BEGIN_EVENT</code> 
+  and <code>TEST_CASE_COMPLETE_EVENT</code> . These events can be used to 
+  inspect the <code>RuntimeObject</code> and catch global identifier leaks
+  that occur througout the runtime execution of program code.
+</p>
+
+<p>  
+  In <code>TEST_CASE_BEGIN_EVENT</code>, inspect the <code>RuntimeObject</code> and save the result. 
+  In <code>TEST_CASE_COMPLETE_EVENT</code>, inspect the <code>RuntimeObject</code> again and compare 
+  the results with results saved during <code>TEST_CASE_BEGIN_EVENT</code>. 
+  Next, for each property that appeared in <code>TEST_CASE_COMPLETE_EVENT</code> but was not present 
+  in the result saved from <code>TEST_CASE_BEGIN_EVENT</code> , a global identifier has been 
+  leaked and a test case warning can be logged.
+</p>
+
+<h4 id="RuntimeObject-references">References</h4>
+<ul>
+    <li>
+        [<a href="/web/20101213142317/http://msdn.microsoft.com/en-us/library/ff521046%28VS.85%29.aspx"
+        >MS-ES3EX</a>]: Microsoft JScript Extensions to the ECMAScript Language Specification Third Edition.
+    </li>
+</ul>
+
+                    </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  4:23 PM in 
+            <a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/" title="/Browsers/"
+            >Browsers</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/&date=2010/04/11/&entry=Detecting-Global-Pollution-with-the-JScript-RuntimeObject" title="Responses on &quot;Detecting Global Pollution with the JScript RuntimeObject&quot;">
+            		<span></span>Responses (1)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: Detecting-Global-Pollution-with-the-JScript-RuntimeObject -->
+
+                
+         
+        <!-- START: Permalink item -->
+                <!-- Trackback Auto Discovery -->
+<!--
+    <rdf:RDF xmlns:rdf="/web/20101213142317/http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="/web/20101213142317/http://purl.org/dc/elements/1.1/"
+             xmlns:trackback="/web/20101213142317/http://madskills.com/public/xml/rss/module/trackback/">
+        <rdf:Description
+             rdf:about="/web/20101213142317/http://dhtmlkitchen.com/news/default/2010/04/11/Detecting-Global-Pollution-with-the-JScript-RuntimeObject"
+             dc:identifier="/web/20101213142317/http://dhtmlkitchen.com/news/default/2010/04/11/Detecting-Global-Pollution-with-the-JScript-RuntimeObject"
+             dc:title="Detecting Global Pollution with the JScript RuntimeObject"
+             dc:subject="/Browsers/"
+             dc:description="&lt;p&gt;
+This article is about debugging with JScript&#39;s &lt;code&gt;RuntimeObject&lt;/code&gt; 
+(&lt;a href=&quot;/web/20101213142317/http://msdn.microsoft.com/en-us/library/ff521039%28VS.85%29.aspx&quot; 
+title=&quot;RuntimeObject: MSDN&quot;&gt;msdn&lt;/a&gt;). ..."
+             dc:creator="Garrett Smith"
+             dc:date="2010-04-11T16:23:36-05:00"
+             trackback:ping="/web/20101213142317/http://dhtmlkitchen.com/news/default/2010/04/11/Detecting-Global-Pollution-with-the-JScript-RuntimeObject?tb=y&amp;entry_id=41" />
+     </rdf:RDF>
+-->
+        
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+                        <p>[<a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/&date=2010/04/11/&entry=Detecting-Global-Pollution-with-the-JScript-RuntimeObject&tb=y&entry_id=41" title="Trackback">Trackback URL for this entry</a>]</p>
+            
+                                    <div class="comment">
+                <a name="response-1"></a>
+                            <strong><a href="/web/20101213142317/http://dhtmlkitchen.com/?category=/Browsers/&date=2010/04/11/&entry=Detecting-Global-Pollution-with-the-JScript-RuntimeObject#response-1">Comment</a>:</strong> <span class="author"><a href="/web/20101213142317/http://thenewobjective.com/">TNO</a></span> at Sun, 11 Apr 6:13 PM
+                <div class="post">Excellent overview. A number of years ago I came across some extensive JScript that (ab)used this FunctionBindingList "feature" for inheritance somehow. At the time I dismissed it as a typo or something but the production you provided makes me want to dig in the web archives to see if I can find it again and take a second look with new eyes.</div>
+                        </div>
+                                
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>
+<div id="column">
+	 <div id="links">
+    <div>
+        <h5>Syndication:</h5>
+        <p>
+        	<a href="/web/20101213142317/http://dhtmlkitchen.com/news/feed/rdf/" title="XML feed of this blog" class="rounded">XML</a>
+        	<a href="/web/20101213142317/http://dhtmlkitchen.com/news/feed/" title="RSS feed of this blog" class="rounded">RSS</a> 
+        	<a href="/web/20101213142317/http://dhtmlkitchen.com/news/feed/atom/" title="Atom feed of this blog" class="rounded">ATOM</a>
+        </p>
+    </div>
+
+    <div id="blojsom">
+        <p><a href="/web/20101213142317/http://blojsom.sf.net/" 
+        	title="Blojsom project home page"><img src="/web/20101213142317im_/http://dhtmlkitchen.com/resources/default/asual-poweredby.jpg" alt="Powered by blojsom" /></a></p>
+    </div>
+</div>

@@ -1,0 +1,679 @@
+    <div class="entry">   
+
+                
+        
+        <h1 class="title"><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind" title="Permalink of &quot;Function.prototype.bind&quot;"
+        	>Function.prototype.bind</a>
+        	<small class="date">Thursday, 11 September 2008</small>
+        	</h1>
+
+        
+        <div class="post">
+            <h3>Function Binding</h3>
+<p>
+	A <dfn>bind</dfn> function wraps a function in a closure, 
+	storing a reference 
+	to the <dfn>context</dfn> argument in the containing scope.
+</p>
+<p>
+    This allows the <dfn>bound</dfn> function to run
+    with a predetermined <dfn>context</dfn>.
+</p>
+
+<h3>Variable <code>this</code></h3>
+<p>
+  When a function is passed as a reference, it loses its 
+  base object. When the <dfn>unbound</dfn> function is called, 
+  the <code>this</code> value is the global object.
+</p>
+
+<h3>How Binding Works</h3>
+<p>
+  By storing a reference to the desired object in a closure, 
+  <code>this</code> argument can be <dfn>bound</dfn>. 
+</p>
+
+<p>
+	In it's simplest form, <code>bind</code> looks like:-
+</p>
+
+<pre>
+Function.prototype.bind = <span class='keyword'>function</span>(<var>context</var>) {
+  <span class='keyword'>var</span> <var>fun</var> = this;
+  <span class='keyword'>return</span> <span class='keyword'>function</span>(){
+    <span class='keyword'>return</span> <var>fun</var>.apply(<var>context</var>, arguments);
+  };
+};
+</pre>
+
+<h3>Why Binding is Useful</h3>
+<p>
+	Binding is often necessary when passing function references.
+    For example:-
+</p>
+
+
+<pre>
+<span class='keyword'>var</span> <var>updater</var> = {
+  fetch : <span class='keyword'>function</span>() {
+    alert(this.time++);
+  },
+  time : 0
+};
+<span class='comment'>// setTimeout(<var>updater</var>.fetch, 500);</span>
+setTimeout(<var>updater</var>.fetch.bind(<var>updater</var>), 500);
+</pre>
+
+<p>
+  The commented-out call to <code>setTimeout</code> would result in a 
+  call to 
+  <code>updater.fetch</code> with the <code>global</code> object 
+  for the <code>this</code> argument. <code>this.time</code> would 
+  be undefined, and <code>this.time++</code> would result in 
+  <code>NaN</code>.
+</p>
+
+<p>
+  A <dfn>bind</dfn> function that does <em>only</em> binding
+  accomplishes a trivial task.
+  In most cases, a closure can just be used where binding is needed. 
+</p>
+
+<h3>Binding in the Wild</h3>
+<p>
+  Most JavaScript libraries handle binding internally. 
+  These libraries also include a <dfn>partial apply</dfn> for 
+  their <dfn>bind</dfn> function. 
+</p>
+
+<h3>Partial Apply</h3>
+<p>
+  <dfn>Partial application</dfn> is setting parameter values of 
+  a function call before it is called. 
+  A <dfn>partial apply</dfn> function usually looks like:-
+</p>
+
+<pre>
+<span class="comment">/** 
+ * Return a function that prepends the 
+ * arguments to partial to this call and 
+ * appends any additional arguments.
+ */</span>
+Function.prototype.partial = <span class='keyword'>function</span>() {
+  <span class='keyword'>var</span> <var>fun</var> = <span class='keyword'>this</span>,
+      <var>preArgs</var> = Array.prototype.slice.call(arguments);
+  <span class='keyword'>return</span> <span class='keyword'>function</span>() {
+    <var>fun</var>.apply(<span class='keyword'>null</span>, <var>preArgs</var>.concat.apply(<var>preArgs</var>, arguments));
+  };
+};
+</pre>
+<p>
+  This allows us to program in a dynamic, functional, 
+  less OO way. For example:
+</p>
+
+<pre>
+<span class='keyword'>function</span> setStyle(<var>style</var>, <var>prop</var>, <var>value</var>) {
+  <span class='keyword'>return</span> <var>style</var>[<var>prop</var>] = <var>value</var>;
+}
+
+<span class="comment">// Create a setBgColor function from 
+// partial application of setStyle.</span>
+<span class='keyword'>var</span> <var>setBgColor</var> = setStyle.partial(document.body.style, "background");
+
+<span class="comment">// Change the body's background color.</span>
+<var>setBgColor</var>(<span class='q'>"red"</span>);
+<var>setBgColor</var>(<span class='q'>"#0f0"</span>);
+</pre>
+
+<h4>Disadvantage</h4>
+<p>
+  <dfn>Partial application</dfn> requires an extra function call, 
+  plus a call to <em><code>concat</code></em>
+  for the extra arguments.
+</p>
+<p>
+  Partial application can make debugging trickier, since there is an 
+  extra layer of indirection to the real method. 
+</p>
+<p>
+  <dfn>Bind</dfn> + <dfn>partial apply</dfn> can be used to force the 
+  <code>this</code> argument of a prototype method to 
+  always be the of the instance. 
+  This is inefficient and often leads to messy, 
+  tangled function decomposition. Libraries that bind every method 
+  do so out of ignorance of the language, and are best avoided.
+</p>
+
+<h3>EcmaScript New Language Feature</h3>
+<p>
+  The forthcoming version of EcmaScript (now called EcmaScript Harmony) 
+  will include 
+  <code>Function.prototype.bind(<var>context</var>)</code>. A native
+  <dfn>bind</dfn> should outperform any other <dfn>bind</dfn> function.
+</p>
+<p>
+  This was something <a href="/web/20110416073043/http://peter.michaux.ca/">Peter</a> brought 
+  up for EcmaScript 4, but appears to be making way into the revised 
+  EcmaScript Harmony.
+</p>
+<p>
+  <a href="/web/20110416073043/http://www.erights.org/">Mark Miller</a> wrote out a "self-hosted" version of 
+  EcmaScript's proposed <code>Function.prototype.bind</code>.
+  It is:-
+</p>
+
+<pre>
+Function.prototype.bind = <span class='keyword'>function</span>(<var>self</var>, <var>var_args</var>) {
+   <span class='keyword'>var</span> <var>thisFunc</var> = <span class='keyword'>this</span>;
+   <span class='keyword'>var</span> <var>leftArgs</var> = Array.slice(arguments, 1);
+  <span class='keyword'>return</span> <span class='keyword'>function</span>(<var>var_args</var>) {
+    <span class='keyword'>var </span>args = <var>leftArgs</var>.concat(Array.slice(arguments, 0));
+    <span class='keyword'>return</span> <var>thisFunc</var>.apply(<var>self</var>, <var>args</var>);
+  };
+};  
+</pre>
+<p>
+  After looking at the ES Harmony proposal, and looking at a 
+  few versions of bind functions, I decided to write a better one 
+  that does exactly what the ES Harmony's bind does, but with 
+  greater efficiency than the current libraries offer, and whose,
+  <code>length</code> property was <code>1</code>.
+</p>
+<p>
+  Although unnecessary, this is a welcome addition to the language.
+  A native bind will outperform any user-defined bind function 
+  and will result in fewer closures.
+</p>
+
+<h3>The Rundown</h3>
+<p>
+  Before I give a critique and rundown, I have a test.
+</p>
+<h4><a href="/web/20110416073043/http://dhtmlkitchen.com/test/blog/bind/BindFunction.html">Library Comparison Test</a></h4>
+
+
+<ol>
+	<li>Garrett's Bind
+		<p>
+		 This bind was, by far, the most efficient in 
+		 tests #1, and #4, and nearly ties Base 2 in test #2 
+		 (Base 2 was about .5 ms faster) . 
+		 This function requires no additional code or functions. 
+		</p>
+	</li>
+	<li><a href="/web/20110416073043/http://code.google.com/p/base2/">Base2</a> 
+	<code>bind</code>
+		<p>
+		  Second performance-wise. 
+		</p>
+		<p>
+		  Requires only a 
+		  top level <code>_slice</code> function (trivial), and performs 
+		  a strategy for extra arguments.  
+		</p>
+	</li>
+	<li><a href="/web/20110416073043/http://dojotoolkit.org/">Dojo</a>'s hitch
+		<p>
+		  Dojo was fast with pure bind, but slower with partial apply. 
+		</p>
+		<p>
+		  This function requires many other functions and has an additional 
+		  complication of accepting strings and arguments of different order.
+		</p>
+	</li>
+	<li> <a href="/web/20110416073043/http://extjs.com/">Ext-js</a> 
+	  <code>Function.prototype.createDelegate</code> 
+		<p>
+		  Performance was slow.  
+		  This function requires no importing of external functions.
+		</p>
+	</li>
+	<li>Mark Miller's <code>bind</code>
+		<p>
+		  Requires no external dependencies. While it gets a 10 for simplicity
+		  and aesthetics, this function was not as fast, and for pure bind 
+		  (no <dfn>partial apply</dfn>) was not nearly as fast as it 
+		  should be.
+		</p>
+	</li>
+	<li>
+		  <a href="/web/20110416073043/http://prototypejs.org/">Prototype</a>'s 
+		  <code>Function.prototype.bind</code>
+		<p>
+		  Performance was fair.
+		  Requires several extra functions + browser detection. The function 
+		  is used very heavily internally.
+		</p>
+	</li>
+	<li><a href="/web/20110416073043/http://mootools.net/">Mootools</a> 
+	    <code>Function.prototype.bind</code>
+		<p>
+		  Performance times were poor and
+		  the results for two tests were wrong. <del>were wrong</del>. 
+		</p>
+		<p><ins>
+		  The entire mootools.js is required for the bind function. 
+		  The library adds a <code>$family</code> property, and makes 
+		  other changes to <code>Array.prototype</code>. 
+		  </ins>
+		</p>
+	</li>
+	<li><a href="/web/20110416073043/http://developer.yahoo.com/yui/3/">YUI 3 </a> 
+	  <code>bind</code>
+	  <p>
+	    Performance time was fair.
+	    The results for test#2 are wrong because the 
+	    call's arguments are prepended, not appended. This is by design.
+	  </p>
+	  <p>
+	    Having the call's arguments <em>prepended</em> 
+	    is an unusual design decision. It might seem
+	    unintuitive, and confuse developers who are used 
+	    to the more common version, as seen in Prototype, Base2, 
+	    and the official EcmaScript proposal.
+	  </p>
+	  <p>
+	    The amount of code YUI's bind depends on is staggering. 
+	  </p>
+	</li>
+	
+</ol>
+
+<h3>Pass the Parme&#378;an</h3>
+<p>
+  Many of the libraries have long chains of function calls. 
+  A bind function does not need and should not require the 
+  inclusion of several other functions.
+</p>
+
+<p>
+  Prototype JS requires the <code>$A</code> function, which requires 
+  <code>Prototype.Browser</code> to determine 
+  which <code>$A</code> function. Browser detection has absolutely 
+  no place in Function binding. (<code>$A</code> also calls 
+  <code>toArray</code> conditionally, but that will not happen in this case.)
+</p>
+
+<p>
+  Dojo is almost as bad. 
+  Dojo's <code>hitch</code> function has the arguments in reverse order and 
+  requires <code>dojo.global</code>, 
+  <code>dojo._hitchArgs</code>, <code>dojo._toArray</code>, 
+  and <code>dojo.isString</code>. 
+</p>
+
+<p>
+  Mootools has very strewn code. The broken bind 
+  function required an additional 108 lines of Mootools. 
+</p>
+<p>
+  YUI is the most grandiose.
+  Function <code>YUI.bind(f, o)</code> is found in 
+  "<samp>oop.js</samp>". File <samp>oop.js</samp>
+  requires over 120k of "prerequisite" files in 
+  <samp>yui.js</samp> and <samp>yui-base.js</samp>, 
+  coming to a total of over 160k. Just for bind. YUI 3 seems to suffer 
+  from over-engineering and <abbr title="Big Up Front Design"
+  >BUFD</abbr>, which is typical in waterfall shops.
+  </p>
+<p>
+  YUI's 'array' module did not seem to load or evaluate properly, so 
+  code from the yui-base file was copy-pasted.
+</p>
+
+<h3>Worth Using?</h3>
+<p>
+  The best bind functions are fast, do not require 
+  other library functions, and are fairly simple. 
+</p>
+<h4>But is a Bind Function Necessary?</h4>
+<p>
+  No. Binding can be achieved with an inline closure 
+  where it is needed
+  and partial application is not necessary.  
+</p>
+
+<p>
+  Here is example 1, without using bind.
+</p>
+<pre>
+<span class='keyword'>var</span> <var>updater</var> = {
+  fetch : <span class='keyword'>function</span>() {
+    alert(<span class='keyword'>this</span>.time++);
+  },
+  time : 0
+};
+setTimeout(<span class='keyword'>function</span>() { <var>updater</var>.fetch(); }, 500);
+</pre>
+<p>
+  A native <code>Function.prototype.bind</code> will allow 
+  for cleaner binding, without the need for creating 
+  a closure. As native code, it will be faster and more reliable.
+  <code>Function.prototype.bind</code> is not necessary, 
+  but is a welcome addition to the language.
+</p>
+
+<h4>Why All the Fuss?</h4>
+<p>
+  Being aware of what libraries do and identifying and learning 
+  from the mistakes of libraries helps developers avoid such 
+  mistakes by learning what the library does. Developers
+  do not need the burden of large, tangled, and often 
+  buggy library dependencies.
+</p>
+
+<h4>Look at The Code</h4>
+<p>
+  <em>What</em> the library's bind function does and <em>how</em> the library uses 
+  that function internally is a step to take in assessing 
+  the library's quality.  
+</p>
+
+<p>
+  A developer can make a more responsible and 
+  professional choice by avoiding a library that makes 
+  heavy use of a slow-spaghetti bind function.
+</p>
+
+<h3>My Version</h3>
+
+<p>
+  The following function is
+  the fastest bind function for pure bind (no partial apply). 
+  It is more than three times as fast as Base2, the second fastest bind 
+  function tested here. 
+</p>
+<p>
+  Here is my version of the bind function.
+</p>
+
+<pre>
+<span class="comment">/**
+ * @param {Object} context the 'this' value to be used.
+ * @param {arguments} [1..n] optional arguments that are
+ * prepended to returned function's call.
+ * @return {Function} a function that applies the original
+ * function with 'context' as the thisArg.
+ */</span>
+Function.prototype.bind = <span class='keyword'>function</span>(<var>context</var>){
+  <span class='keyword'>var</span> <var>fn</var> = <span class='keyword'>this</span>, 
+      <var>ap</var>, <var>concat</var>, <var>args</var>,
+      <var>isPartial</var> = arguments.length > 1;
+  <span class="comment">// Strategy 1: just bind, not a partialApply</span>
+  <span class='keyword'>if</span>(!<var>isPartial</var>) {
+    <span class='keyword'>return</span> <span class='keyword'>function</span>() {
+        <span class='keyword'>if</span>(arguments.length !== 0) {
+          <span class='keyword'>return</span> <var>fn</var>.apply(context, arguments);
+        } <span class='keyword'>else</span> {
+          <span class='keyword'>return</span> <var>fn</var>.call(<var>context</var>); <span class='comment'>// faster in Firefox.</span>
+        }
+      };
+    } <span class='keyword'>else</span> {
+    <span class="comment">// Strategy 2: partialApply</span>
+    <var>ap</var> = Array.prototype,
+    <var>args</var> = <var>ap</var>.<var>slice</var>.call(arguments, 1);
+    <var>concat</var> = <var>ap</var>.concat;
+    <span class='keyword'>return</span> <span class='keyword'>function</span>() {
+      <span class='keyword'>return</span> <var>fn</var>.apply(context, 
+        arguments.length === 0 ? <var>args</var> : 
+        <var>concat</var>.apply(<var>args</var>, arguments));
+    };
+  }
+};
+</pre>
+<p>
+  This function was not included in 
+  <a href="/web/20110416073043/http://dhtmlkithcen.com/ape/">APE</a> 
+  because it was not needed. This function may be used by libraries who wish to 
+  continue using a bind function with the benefit of faster performance. 
+</p>
+
+            <!-- technorati tags start --><p style="text-align:right;font-size:10px;">Technorati Tags:
+<a href="/web/20110416073043/http://www.technorati.com/tag/JavaScript" rel="tag">JavaScript</a>
+</p><!-- technorati tags end -->
+        </div>
+        <div class="info">
+            Posted by <span class="author">default</span> 
+            at  5:20 PM in 
+            <a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/" title="/JavaScript/"
+            >JavaScript</a>
+        </div>
+        <div class="links">
+                        <span class="commentslink">
+            	<a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind" title="Responses on &quot;Function.prototype.bind&quot;">
+            		<span></span>Responses (11)</a>
+            </span>
+        </div>
+        
+        		<!--  param_entry: Function-prototype-bind -->
+
+                
+         
+        <!-- START: Permalink item -->
+                <!-- Trackback Auto Discovery -->
+<!--
+    <rdf:RDF xmlns:rdf="/web/20110416073043/http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+             xmlns:dc="/web/20110416073043/http://purl.org/dc/elements/1.1/"
+             xmlns:trackback="/web/20110416073043/http://madskills.com/public/xml/rss/module/trackback/">
+        <rdf:Description
+             rdf:about="/web/20110416073043/http://dhtmlkitchen.com/news/default/2008/09/11/Function-prototype-bind"
+             dc:identifier="/web/20110416073043/http://dhtmlkitchen.com/news/default/2008/09/11/Function-prototype-bind"
+             dc:title="Function.prototype.bind"
+             dc:subject="/JavaScript/"
+             dc:description="&lt;h3&gt;Function Binding&lt;/h3&gt;
+&lt;p&gt;
+	A &lt;dfn&gt;bind&lt;/dfn&gt; function wraps a function in a closure, 
+	storing a reference 
+	to the &lt;dfn&gt;context&lt;/dfn&gt; argument in the containing scope.
+&lt;/p&gt;
+&lt;p&gt;
+    This ..."
+             dc:creator="Garrett Smith"
+             dc:date="2008-09-11T17:20:00-05:00"
+             trackback:ping="/web/20110416073043/http://dhtmlkitchen.com/news/default/2008/09/11/Function-prototype-bind?tb=y&amp;entry_id=38" />
+     </rdf:RDF>
+-->
+        
+            <p>&nbsp;</p>
+            <p>&nbsp;</p>
+                        <p>[<a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind&tb=y&entry_id=38" title="Trackback">Trackback URL for this entry</a>]</p>
+            
+                                    <div class="comment">
+                <a name="response-1"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-1">Comment</a>:</strong> <span class="author">quarkdoll</span> at Fri, 12 Sep 3:57 AM
+                <div class="post">(ya got a little paste happy - the article repeats itself)</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-2"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-2">Comment</a>:</strong> <span class="author">quarkdoll</span> at Fri, 12 Sep 4:21 AM
+                <div class="post">Did you really check what $type() is returning in MooTools 1.2? (because it is returning array for MDC literal arrays, MDC class constructed arrays, and MooTool's $$ operator)... :- /</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-3"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-3">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://In process">Daniel Buchner</a></span> at Fri, 12 Sep 10:01 AM
+                <div class="post">You are making claims about MooTools that are flat out wrong.  Your implementation of the core $type function is flawed and so are your assertions of the library.  As a user of the lib and others I really think you should be a little better scripting with, and understanding, all the libraries before you make such claims.  Good job damaging OS developments efforts through code misuse, assumption, and ignorance! Completely making a fool of himself..."that's an interesting strategy Cotton, let's see how it works out for him!" - Dodgeball</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-4"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-4">Comment</a>:</strong> <span class="author">Nathan White</span> at Fri, 12 Sep 10:59 AM
+                <div class="post">Your comments about Mootools couldn't be further from the truth. $splat turns anything into an array. This is because Mootools simplifies the code following DRY principles and only uses 'apply' and not 'call'. If we look at your console.log yes at that moment it is an object but if we look at what happens in the next line an object will be simply become the first item in an array. So mootools handles fine. The other nice aspect of mootools is how they extend the prototype. Mootools also gives you 'attempt', 'bindWithEvent', 'delay' and 'periodical' all different variations of bind. 'create' is a generic bind creation function depending on the options, creates all kinds of neat binds. Very elegant code. 
+<br />
+<br />Before making comments like "No professional developer should allow himself to use such code for a real project." You really need to understand the code and understand how javascript works. It is also necessary to have a proper understanding of the philosophy of the framework that your examining.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-5"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-5">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://dhtmlkitchen,com/">Garrett</a></span> at Fri, 12 Sep 1:33 PM
+                <div class="post">@Nathan, 
+<br />What does DRY have to do with 'always using apply() and not call()'? 
+<br /> 
+<br />You are correct that, in this case, $splat will return an array with the array at position 0. It would look like:- <pre>[ [] ]</pre>. 
+<br /> 
+<br />The bind function of MooTools has one required parameter, bind, plus two optional parameters, args and event. Parameter args is expected to be an array by the code and this is documented:
+<br />http://docs.mootools.net/Native/Function/#Function:bind  
+<br />  
+<br />@Daniel Buchner:'Your implementation of the core $type function is flawed' 
+<br />$type is called by $splat. I did not 'implement' it. 
+<br /> 
+<br />@quarkdoll: 'it is returning array for MDC literal arrays' 
+<br />Function $type returns 'array' for MDC literal arrays? MDC as in the "Mozilla Developer Center" documentation website? Did you assume there is a difference between an object created by an array literal or an array that is created otherwise? 
+<br />
+<br />Can you demonstrate one case where (typeof anything == 'array') is true?
+<br />
+<br />We can see that here:
+<br /><pre>typeof []</pre> 
+<br />Result: "object" 
+<br />
+<br />Function $type function will not ever return 'array', either.
+<br /> 
+<br />Here is your '$type' function: 
+<br /><pre> 
+<br />function $type(obj){ 
+<br /> if (obj == undefined) return false; 
+<br /> if (obj.$family) return (obj.$family.name == 'number' &amp;amp;&amp;amp; 
+<br /> !isFinite(obj)) ? false : obj.$family.name; 
+<br /> if (obj.nodeName){ 
+<br /> switch (obj.nodeType){ 
+<br /> case 1: return 'element'; 
+<br /> case 3: return (/\S/).test(obj.nodeValue) ? 'textnode' : 
+<br /> 'whitespace'; 
+<br /> } 
+<br /> } else if (typeof obj.length == 'number'){ 
+<br /> if (obj.callee) return 'arguments'; 
+<br /> else if (obj.item) return 'collection'; 
+<br /> } 
+<br /> return typeof obj; 
+<br />}; 
+<br /></pre> 
+<br />Function $type will either return a boolean, a number, or a string. Is this part of the design philosophy, Nathan? 
+<br /> 
+<br />Where does $type return the string 'array'? 
+<br /> 
+<br />$type returns boolean false on line #1 if obj is either null or undefined. Next, if a $family property is found, if $family.name is not finite returns boolean false, otherwise the $family.name is returned. Then it does a check for a nodeName property, does a switch on a nodeType property and will return a string if the nodeType is 1 or 3 (presumably an Element or Text). Next it tries to get a 'length' property, where it can return either 'arguments' or 'collection'. FInally, it returns typeof obj. 
+<br />  
+<br />In all the complaining, you MooTools people have provided 0 test cases and 0 examples.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-6"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-6">Comment</a>:</strong> <span class="author">Nathan White</span> at Fri, 12 Sep 3:36 PM
+                <div class="post">its all about this line in $type()
+<br />
+<br />
+<br /> if (obj.$family) return (obj.$family.name == 'number' &amp;amp;&amp;amp; 
+<br />
+<br />
+<br />Arrays are wrapped into the Native Object. If you look at line 100 (http://github.com/mootools/mootools-core/tree/master/Source/Core/Core.js#L99) All native objects are extended if you look at line 42 a type is assigned to the native. So when you test they will return array.
+<br />
+<br />You have several flaws with your test concerning mootools. 1. Native is included but never used. 2. Even if it was, it is missing other key elements like Native.typize.
+<br />
+<br />I haven't had time to go through your code but from what I have seen it is broken and incomplete.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-7"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-7">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://dhtmlkitchen.com/">Garrett</a></span> at Fri, 12 Sep 4:28 PM
+                <div class="post">The MooTools js library is now included, in its entirety, as part of the test.
+<br />
+<br />MooTools' bind function depends on modification of Native prototype of Array, to add an Array.prototype.$family property. 
+<br />
+<br />MooTools and Prototype both modify build-ins' prototypes. The concern was that adding both libraries to the same page might effect the outcome of either. None of the other libraries' bind functions (except YUI's) required that the library be included in its entirety. 
+<br />
+<br />Moo is now passing two tests and with fairer performance.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-8"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-8">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://developer.yahoo.com/yui/3/configurator/">Adam</a></span> at Fri, 12 Sep 4:53 PM
+                <div class="post">It does not require 160k to get the oop module in YUI 3.  I'm not sure how you could have come up with a number so far off the mark.
+<br />
+<br />yui-base + oop: 9k
+<br />
+<br />http://yui.yahooapis.com/combo?3.0.0pr1/build/yui-base/yui-base-min.js&amp;3.0.0pr1/build/oop/oop-min.js
+<br />
+<br />In addition, I've never seen the array module fail to load -- it is part of yui-base, and is loaded every time someone uses YUI 3.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-9"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-9">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://...coming">Daniel Buchner</a></span> at Fri, 12 Sep 5:27 PM
+                <div class="post">Dude, just run your stuff in an iframe like the SlickSpeed test.  This way libs that mod native types would be able to overwrite each other.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-10"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-10">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://dhtmlkitchen.com/">Garrett</a></span> at Fri, 12 Sep 5:37 PM
+                <div class="post">Here's where the 160k number comes from:
+<br />
+<br />-rw-r--r--   1 gs  staff   11363 Sep 11 11:26 oop.js
+<br />-rw-r--r--   1 gs  staff   43893 Sep 11 11:01 yui-base.js
+<br />-rw-r--r--   1 gs  staff  109470 Aug 13 16:44 yui.js
+<br />
+<br />oop.js..........12k
+<br />yui.js..........44k
+<br />yui-base.js....108k
+<br />-------------------
+<br />               164k
+<br />
+<br />You can point out that minification is going to cut the file size down. We all know that. The nicely-commented source code gets squashed.
+<br />
+<br />However, for the purpose of the test, I used readable source code. Nobody's files got minified. 
+<br />
+<br />If each library had been included its entirety, the test page would be very heavy. Especially with Ext-js hogging up nearly 1mb. I drew the line at the bind function, plus whatever else is absolutely required by the bind function and nothing else.
+<br />
+<br />In writing the test, I found that the YUI test would err on Y.Array. I figured that it was not loaded, but maybe the problem is caused by something else, including the possibility that I did not import or call use() properly.
+<br />
+<br />I found the example here:-
+<br />http://developer.yahoo.com/yui/3/examples/yui/yui-more.html
+<br />load the modules and try:
+<br />javascript:alert(YUI.Array);
+<br />
+<br />I am not clear on what |Y| is in Y.Array. YUI.Array and YAHOO.Array were both undefined.</div>
+                        </div>
+                                    <div class="comment">
+                <a name="response-11"></a>
+                            <strong><a href="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind#response-11">Comment</a>:</strong> <span class="author"><a href="/web/20110416073043/http://digitarald.de/">Harald</a></span> at Mon, 15 Sep 10:47 AM
+                <div class="post">Kinda strange framework review that you shuffled here. Who would use a framework depending on how many lines it uses for Function::bind. Like MooTools adds one powerful Function::create and just adds several aliases with different arguments (bind, pass, delay, periodical). Allowing arrays and non-array values for the "args" argument is called "Function overloading" or "Type polymorphism", benefits are well documented.</div>
+                        </div>
+                                        <!-- START: Comment form -->
+            <h3>Your comment:</h3>
+            <form id="commentform" method="post" action="/web/20110416073043/http://dhtmlkitchen.com/?category=/JavaScript/&date=2008/09/11/&entry=Function-prototype-bind">
+                <div>
+                    <input type="hidden" name="comment" value="y" />
+                    <input type="hidden" name="entry_id" value="38" />
+                    <input type="hidden" name="permalink" value="Function-prototype-bind" />
+                                                        </div>  
+                <div class="label"><label for="author">Author (<span class="red">*</span>):</label></div>
+                <div class="input"><input id="author" name="author" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="authorEmail">E-mail:</label></div>
+                <div class="input"><input id="authorEmail" name="authorEmail" type="text" value="" class="fixed" /><span>(not displayed)</span></div>
+
+                <div class="label"><label for="authorURL">URL:</label></div>
+                <div class="input"><input id="authorURL" name="authorURL" type="text" value="" class="fixed" /></div>
+
+                <div class="label"><label for="commentText">Comment (<span class="red">*</span>):</label></div>
+                <div class="input"><textarea name="commentText" id="commentText" rows="7" cols="55" class="fixed"></textarea></div>
+
+                <div class="label">&nbsp;</div>
+                <div class="input"><label for="remember"><input id="remember" name="remember" type="checkbox"  /> Remember me?</label></div>
+
+                <div class="clear"></div>
+                
+                <!--
+                <div>
+					<label for="gatekeeper">
+						<span class="section">$GATEKEEPER_QA.getQuestion()</span> 
+						(<span class="mandatory">*</span>)
+					</label>
+					<input type="text" name="gatekeeper" id="gatekeeper" size="10" maxlength="128"/>
+				</div>
+-->
+                <div class="label">&nbsp;</div>
+                <div class="input"><input type="submit" name="submit" value="Comment" class="button" 
+                /><input type="reset" name="reset" value="Reset" class="button" /></div>
+
+                <div class="clear"></div>
+                
+            </form>
+        <!-- END: Comment form -->
+        
+        <!-- END: Permalink item -->
+            </div>
+    <div class="clear"></div>
+	</div>
